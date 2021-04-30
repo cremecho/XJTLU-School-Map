@@ -1,0 +1,108 @@
+<html>
+<head>
+<title>manifest-merger-blame-debug-report.txt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #080808;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+manifest-merger-blame-debug-report.txt</font>
+</center></td></tr></table>
+<pre><span class="s0">1&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<span class="s0">2&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;</span>
+<span class="s0">3    package=&quot;com.example.project_p1&quot;</span>
+<span class="s0">4    android:versionCode=&quot;1&quot;</span>
+<span class="s0">5    android:versionName=&quot;1.0.0&quot; &gt;</span>
+<span class="s0">6</span>
+<span class="s0">7    &lt;uses-sdk</span>
+<span class="s0">8        android:minSdkVersion=&quot;16&quot;</span>
+<span class="s0">9        android:targetSdkVersion=&quot;30&quot; /&gt;</span>
+<span class="s0">10    &lt;!--</span>
+<span class="s0">11         Flutter needs it to communicate with the running application</span>
+<span class="s0">12         to allow setting breakpoints, to provide hot reload, etc.</span>
+<span class="s0">13    --&gt;</span>
+<span class="s0">14    &lt;uses-permission android:name=&quot;android.permission.INTERNET&quot; /&gt;</span>
+<span class="s0">14--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\debug\AndroidManifest.xml:6:5-66</span>
+<span class="s0">14--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\debug\AndroidManifest.xml:6:22-64</span>
+<span class="s0">15</span>
+<span class="s0">16    &lt;application</span>
+<span class="s0">16--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:3:4-40:19</span>
+<span class="s0">17        android:appComponentFactory=&quot;androidx.core.app.CoreComponentFactory&quot;</span>
+<span class="s0">17--&gt;[androidx.core:core:1.1.0] C:\Users\2000\.gradle\caches\transforms-2\files-2.1\2e94107f30f39be366a17347c2bf100b\core-1.1.0\AndroidManifest.xml:24:18-86</span>
+<span class="s0">18        android:debuggable=&quot;true&quot;</span>
+<span class="s0">19        android:icon=&quot;@mipmap/ic_launcher&quot;</span>
+<span class="s0">19--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:5:9-43</span>
+<span class="s0">20        android:label=&quot;project_p1&quot; &gt;</span>
+<span class="s0">20--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:4:9-35</span>
+<span class="s0">21        &lt;activity</span>
+<span class="s0">21--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:6:9-34:20</span>
+<span class="s0">22            android:name=&quot;com.example.project_p1.MainActivity&quot;</span>
+<span class="s0">22--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:7:13-41</span>
+<span class="s0">23            android:configChanges=&quot;orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode&quot;</span>
+<span class="s0">23--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:10:13-163</span>
+<span class="s0">24            android:hardwareAccelerated=&quot;true&quot;</span>
+<span class="s0">24--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:11:13-47</span>
+<span class="s0">25            android:launchMode=&quot;singleTop&quot;</span>
+<span class="s0">25--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:8:13-43</span>
+<span class="s0">26            android:theme=&quot;@style/LaunchTheme&quot;</span>
+<span class="s0">26--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:9:13-47</span>
+<span class="s0">27            android:windowSoftInputMode=&quot;adjustResize&quot; &gt;</span>
+<span class="s0">27--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:12:13-55</span>
+<span class="s0">28</span>
+<span class="s0">29            &lt;!--</span>
+<span class="s0">30                 Specifies an Android theme to apply to this Activity as soon as</span>
+<span class="s0">31                 the Android process has started. This theme is visible to the user</span>
+<span class="s0">32                 while the Flutter UI initializes. After that, this theme continues</span>
+<span class="s0">33                 to determine the Window background behind the Flutter UI.</span>
+<span class="s0">34            --&gt;</span>
+<span class="s0">35            &lt;meta-data</span>
+<span class="s0">35--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:17:13-20:17</span>
+<span class="s0">36                android:name=&quot;io.flutter.embedding.android.NormalTheme&quot;</span>
+<span class="s0">36--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:18:15-70</span>
+<span class="s0">37                android:resource=&quot;@style/NormalTheme&quot; /&gt;</span>
+<span class="s0">37--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:19:15-52</span>
+<span class="s0">38            &lt;!--</span>
+<span class="s0">39                 Displays an Android View that continues showing the launch screen</span>
+<span class="s0">40                 Drawable until Flutter paints its first frame, then this splash</span>
+<span class="s0">41                 screen fades out. A splash screen is useful to avoid any visual</span>
+<span class="s0">42                 gap between the end of Android's launch screen and the painting of</span>
+<span class="s0">43                 Flutter's first frame.</span>
+<span class="s0">44            --&gt;</span>
+<span class="s0">45            &lt;meta-data</span>
+<span class="s0">45--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:26:13-29:17</span>
+<span class="s0">46                android:name=&quot;io.flutter.embedding.android.SplashScreenDrawable&quot;</span>
+<span class="s0">46--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:27:15-79</span>
+<span class="s0">47                android:resource=&quot;@drawable/launch_background&quot; /&gt;</span>
+<span class="s0">47--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:28:15-61</span>
+<span class="s0">48</span>
+<span class="s0">49            &lt;intent-filter&gt;</span>
+<span class="s0">49--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:30:13-33:29</span>
+<span class="s0">50                &lt;action android:name=&quot;android.intent.action.MAIN&quot; /&gt;</span>
+<span class="s0">50--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:31:17-68</span>
+<span class="s0">50--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:31:25-66</span>
+<span class="s0">51</span>
+<span class="s0">52                &lt;category android:name=&quot;android.intent.category.LAUNCHER&quot; /&gt;</span>
+<span class="s0">52--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:32:17-76</span>
+<span class="s0">52--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:32:27-74</span>
+<span class="s0">53            &lt;/intent-filter&gt;</span>
+<span class="s0">54        &lt;/activity&gt;</span>
+<span class="s0">55        &lt;!--</span>
+<span class="s0">56             Don't delete the meta-data below.</span>
+<span class="s0">57             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java</span>
+<span class="s0">58        --&gt;</span>
+<span class="s0">59        &lt;meta-data</span>
+<span class="s0">59--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:37:9-39:33</span>
+<span class="s0">60            android:name=&quot;flutterEmbedding&quot;</span>
+<span class="s0">60--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:38:13-44</span>
+<span class="s0">61            android:value=&quot;2&quot; /&gt;</span>
+<span class="s0">61--&gt;C:\Users\2000\AndroidStudioProjects\project_p1\android\app\src\main\AndroidManifest.xml:39:13-30</span>
+<span class="s0">62    &lt;/application&gt;</span>
+<span class="s0">63</span>
+<span class="s0">64&lt;/manifest&gt;</span>
+</pre>
+</body>
+</html>

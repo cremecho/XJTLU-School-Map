@@ -1,0 +1,94 @@
+<html>
+<head>
+<title>test.dart</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #080808;}
+.s1 { color: #067d17;}
+.s2 { color: #8c8c8c; font-style: italic;}
+.s3 { color: #0033b3;}
+.s4 { color: #1750eb;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+test.dart</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">'sub1.dart'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">'package:flutter/material.dart'</span><span class="s0">;</span>
+
+
+<span class="s2">//void main() =&gt; runApp(MyApp());</span>
+
+<span class="s3">class </span><span class="s0">MyApp2 </span><span class="s3">extends </span><span class="s0">StatelessWidget {</span>
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+    <span class="s0">bool flip = </span><span class="s3">true</span><span class="s0">;</span>
+    <span class="s2">/* 
+    AppBar appBar = flip 
+        ? AppBar() 
+        : AppBar( 
+            title: Text('Hello Flutter Europe'), 
+    );*/</span>
+      <span class="s0">Widget child = MyHomePage();</span>
+      <span class="s0">child = SubPage(child: child);</span>
+    <span class="s3">return </span><span class="s0">MaterialApp(</span>
+      <span class="s0">title: </span><span class="s1">'Flutter Demo'</span><span class="s0">,</span>
+      <span class="s0">theme: ThemeData(</span>
+        <span class="s0">primarySwatch: Colors.blue,</span>
+      <span class="s0">),</span>
+      <span class="s0">home: child,</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s3">class </span><span class="s0">MyHomePage </span><span class="s3">extends </span><span class="s0">StatefulWidget {</span>
+  <span class="s2">//final AppBar appBar;</span>
+
+  <span class="s2">//MyHomePage({Key key, @required this.appBar}) : super(key: key);</span>
+  <span class="s2">//final Widget chil;</span>
+
+  <span class="s2">//MyHomePage({Key key, this.chil}) : super(key: key);</span>
+  <span class="s0">@override</span>
+  <span class="s0">_MyHomePageState createState() =&gt; _MyHomePageState();</span>
+<span class="s0">}</span>
+
+<span class="s3">class </span><span class="s0">_MyHomePageState </span><span class="s3">extends </span><span class="s0">State&lt;MyHomePage&gt; {</span>
+  <span class="s0">int _counter = </span><span class="s4">0</span><span class="s0">;</span>
+
+  <span class="s3">void </span><span class="s0">_incrementCounter() {</span>
+    <span class="s0">setState(() {</span>
+      <span class="s0">_counter++;</span>
+    <span class="s0">});</span>
+  <span class="s0">}</span>
+
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+    <span class="s3">return </span><span class="s0">Scaffold(</span>
+      <span class="s2">//appBar: widget.appBar,</span>
+      <span class="s0">body: Center(</span>
+        <span class="s0">child: Column(</span>
+          <span class="s0">mainAxisAlignment: MainAxisAlignment.center,</span>
+          <span class="s0">children: &lt;Widget&gt;[</span>
+            <span class="s0">Text(</span>
+              <span class="s1">'You have pushed the button this many times:'</span><span class="s0">,</span>
+            <span class="s0">),</span>
+            <span class="s0">Text(</span>
+              <span class="s1">'</span><span class="s0">$_counter</span><span class="s1">'</span><span class="s0">,</span>
+              <span class="s0">style: Theme.of(context).textTheme.display1,</span>
+            <span class="s0">),</span>
+          <span class="s0">],</span>
+        <span class="s0">),</span>
+      <span class="s0">),</span>
+      <span class="s0">floatingActionButton: FloatingActionButton(</span>
+        <span class="s0">onPressed: _incrementCounter,</span>
+        <span class="s0">tooltip: </span><span class="s1">'Increment'</span><span class="s0">,</span>
+        <span class="s0">child: Icon(Icons.add),</span>
+      <span class="s0">),</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+<span class="s0">}</span></pre>
+</body>
+</html>

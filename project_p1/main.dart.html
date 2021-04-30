@@ -1,0 +1,171 @@
+<html>
+<head>
+<title>main.dart</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #080808;}
+.s1 { color: #067d17;}
+.s2 { color: #0033b3;}
+.s3 { color: #1750eb;}
+.s4 { color: #8c8c8c; font-style: italic;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.dart</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">'dart:async'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">'package:flutter/material.dart'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">'SearchPage.dart'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">'test.dart'</span><span class="s0">;</span>
+
+<span class="s2">void </span><span class="s0">main() {</span>
+  <span class="s0">runApp(MyApp());</span>
+<span class="s0">}</span>
+
+<span class="s2">class </span><span class="s0">MyApp </span><span class="s2">extends </span><span class="s0">StatelessWidget {</span>
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+    <span class="s2">return </span><span class="s0">MaterialApp(</span>
+      <span class="s0">title: </span><span class="s1">'Splash Screen'</span><span class="s0">,</span>
+      <span class="s0">theme: ThemeData(</span>
+        <span class="s0">primarySwatch: Colors.grey,</span>
+      <span class="s0">),</span>
+      <span class="s0">home: MyHomePage(),</span>
+      <span class="s0">debugShowCheckedModeBanner: </span><span class="s2">false</span><span class="s0">,</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s2">class </span><span class="s0">MyHomePage </span><span class="s2">extends </span><span class="s0">StatefulWidget {</span>
+  <span class="s0">@override</span>
+  <span class="s0">_MyHomePageState createState() =&gt; _MyHomePageState();</span>
+<span class="s0">}</span>
+
+
+
+<span class="s2">class </span><span class="s0">_MyHomePageState </span><span class="s2">extends </span><span class="s0">State&lt;MyHomePage&gt; {</span>
+  <span class="s0">@override</span>
+  <span class="s2">void </span><span class="s0">initState() {</span>
+    <span class="s2">super</span><span class="s0">.initState();</span>
+    <span class="s0">Timer(Duration(seconds: </span><span class="s3">2</span><span class="s0">),</span>
+            <span class="s0">()=&gt;Navigator.pushReplacement(context,</span>
+            <span class="s0">MaterialPageRoute(builder:</span>
+                <span class="s0">(context) =&gt;</span>
+                <span class="s0">SecondScreen()</span>
+            <span class="s0">)</span>
+        <span class="s0">)</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+    <span class="s2">return </span><span class="s0">Container(</span>
+        <span class="s0">color: Colors.white,</span>
+        <span class="s0">child:Image(image: AssetImage(</span><span class="s1">'images/splash.png'</span><span class="s0">), fit: BoxFit.fill,)</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+<span class="s0">}</span>
+
+
+<span class="s2">class </span><span class="s0">SecondScreen </span><span class="s2">extends </span><span class="s0">StatelessWidget {</span>
+
+  <span class="s0">@override</span>
+
+  <span class="s0">Widget build(BuildContext context) {</span>
+
+    <span class="s2">return </span><span class="s0">Scaffold(</span>
+      <span class="s0">body: Container(</span>
+          <span class="s0">constraints: BoxConstraints.expand(),</span>
+        <span class="s0">decoration: BoxDecoration(</span>
+         <span class="s0">image: </span><span class="s2">new </span><span class="s0">DecorationImage(</span>
+            <span class="s0">fit: BoxFit.cover,</span>
+            <span class="s0">image: </span><span class="s2">new </span><span class="s0">AssetImage(</span><span class="s1">'images/layout.jpg'</span><span class="s0">),</span>
+
+        <span class="s0">),</span>
+      <span class="s0">),</span>
+
+          <span class="s0">child:Column</span>
+            <span class="s0">(</span>
+              <span class="s0">children: &lt;Widget&gt;[</span>
+                <span class="s0">SizedBox(height: </span><span class="s3">40</span><span class="s0">),</span>
+                <span class="s0">Container(</span>
+                  <span class="s0">width: </span><span class="s3">300</span><span class="s0">,</span>
+                  <span class="s0">child:</span>
+                      <span class="s2">new </span><span class="s0">Theme(data: </span><span class="s2">new </span><span class="s0">ThemeData(</span>
+                        <span class="s0">primaryColor: Colors.black54,</span>
+                        <span class="s0">primaryColorDark: Colors.black54,</span>
+                      <span class="s0">),</span>
+                          <span class="s0">child:</span>
+                          <span class="s2">new </span><span class="s0">TextField(</span>
+                            <span class="s0">decoration: InputDecoration(</span>
+
+                                <span class="s0">prefixIcon: Icon(Icons.search, color: Colors.black45,),</span>
+
+                                <span class="s0">border: </span><span class="s2">new </span><span class="s0">OutlineInputBorder(</span>
+                                    <span class="s0">borderRadius: </span><span class="s2">new </span><span class="s0">BorderRadius.circular(</span><span class="s3">15.0</span><span class="s0">),</span>
+                                    <span class="s0">borderSide: </span><span class="s2">const </span><span class="s0">BorderSide(color: Colors.black12)</span>
+                                <span class="s0">),</span>
+                                <span class="s0">fillColor: Colors.white,</span>
+                                <span class="s0">filled: </span><span class="s2">true</span><span class="s0">,</span>
+                                <span class="s0">contentPadding: </span><span class="s2">const </span><span class="s0">EdgeInsets.symmetric(vertical: </span><span class="s3">25.0</span><span class="s0">, horizontal: </span><span class="s3">60</span><span class="s0">),</span>
+                                <span class="s0">hintText: </span><span class="s1">'XJTLU Map'</span><span class="s0">,</span>
+                                <span class="s0">hintStyle: TextStyle(color: Colors.black26)</span>
+
+                            <span class="s0">),</span>
+                            <span class="s0">controller: TextEditingController() ..text,</span>
+                          <span class="s0">),</span>
+
+                      <span class="s0">),</span>
+
+
+
+                <span class="s0">),</span>
+
+
+              <span class="s0">],</span>
+          <span class="s0">)</span>
+
+     <span class="s0">),</span>
+      <span class="s0">floatingActionButton: FloatingActionButton(</span>
+        <span class="s0">child:</span>
+            <span class="s2">new </span><span class="s0">IconTheme(data: </span><span class="s2">new </span><span class="s0">IconThemeData(</span>
+              <span class="s0">color: Colors.black54,</span>
+              <span class="s0">),</span>
+              <span class="s0">child: Icon(</span>
+                <span class="s0">Icons.more_vert,</span>
+
+            <span class="s0">),),</span>
+          <span class="s0">focusColor: Colors.white38,</span>
+          <span class="s0">backgroundColor: Colors.white,</span>
+          <span class="s0">onPressed: (){</span>
+          <span class="s0">Navigator.push(context, MaterialPageRoute(builder: (context){</span>
+            <span class="s4">//return SearchPage();</span>
+            <span class="s2">return </span><span class="s0">MyApp1();</span>
+          <span class="s0">}));</span>
+        <span class="s0">},</span>
+      <span class="s0">),</span>
+    <span class="s0">);</span>
+  <span class="s0">}</span>
+
+  <span class="s0">Widget SearchField = Container(</span>
+    <span class="s0">padding: EdgeInsets.all(</span><span class="s3">20.0</span><span class="s0">),</span>
+    <span class="s0">child: Row(</span>
+      <span class="s0">children: &lt;Widget&gt;[</span>
+        <span class="s0">TextField(</span>
+          <span class="s0">decoration: InputDecoration(</span>
+            <span class="s0">prefixIcon: Icon(Icons.search)</span>
+          <span class="s0">),</span>
+          <span class="s0">controller: TextEditingController() ..text = </span><span class="s1">'Search for: E.g. SC169'</span><span class="s0">,</span>
+          <span class="s0">onChanged: (text) =&gt; {},</span>
+        <span class="s0">)</span>
+
+      <span class="s0">],</span>
+    <span class="s0">)</span>
+  <span class="s0">);</span>
+
+
+<span class="s0">}</span></pre>
+</body>
+</html>

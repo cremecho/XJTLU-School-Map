@@ -1,0 +1,2162 @@
+<html>
+<head>
+<title>f_000002</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #080808;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+f_000002</font>
+</center></td></tr></table>
+<pre><span class="s0">/** vim: et:ts=4:sw=4:sts=4</span>
+ <span class="s0">* @license RequireJS 2.3.3 Copyright jQuery Foundation and other contributors.</span>
+ <span class="s0">* Released under MIT license, https://github.com/requirejs/requirejs/blob/master/LICENSE</span>
+ <span class="s0">*/</span>
+<span class="s0">//Not using strict: uneven strict support in browsers, #392, and causes</span>
+<span class="s0">//problems with requirejs.exec()/transpiler plugins that may not be strict.</span>
+<span class="s0">/*jslint regexp: true, nomen: true, sloppy: true */</span>
+<span class="s0">/*global window, navigator, document, importScripts, setTimeout, opera */</span>
+
+<span class="s0">var requirejs, require, define;</span>
+<span class="s0">(function (global, setTimeout) {</span>
+    <span class="s0">var req, s, head, baseElement, dataMain, src,</span>
+        <span class="s0">interactiveScript, currentlyAddingScript, mainScript, subPath,</span>
+        <span class="s0">version = '2.3.3',</span>
+        <span class="s0">commentRegExp = /\/\*[\s\S]*?\*\/|([^:&quot;'=]|^)\/\/.*$/mg,</span>
+        <span class="s0">cjsRequireRegExp = /[^.]\s*require\s*\(\s*[&quot;']([^'&quot;\s]+)[&quot;']\s*\)/g,</span>
+        <span class="s0">jsSuffixRegExp = /\.js$/,</span>
+        <span class="s0">currDirRegExp = /^\.\//,</span>
+        <span class="s0">op = Object.prototype,</span>
+        <span class="s0">ostring = op.toString,</span>
+        <span class="s0">hasOwn = op.hasOwnProperty,</span>
+        <span class="s0">isBrowser = !!(typeof window !== 'undefined' &amp;&amp; typeof navigator !== 'undefined' &amp;&amp; window.document),</span>
+        <span class="s0">isWebWorker = !isBrowser &amp;&amp; typeof importScripts !== 'undefined',</span>
+        <span class="s0">//PS3 indicates loaded and complete, but need to wait for complete</span>
+        <span class="s0">//specifically. Sequence is 'loading', 'loaded', execution,</span>
+        <span class="s0">// then 'complete'. The UA check is unfortunate, but not sure how</span>
+        <span class="s0">//to feature test w/o causing perf issues.</span>
+        <span class="s0">readyRegExp = isBrowser &amp;&amp; navigator.platform === 'PLAYSTATION 3' ?</span>
+                      <span class="s0">/^complete$/ : /^(complete|loaded)$/,</span>
+        <span class="s0">defContextName = '_',</span>
+        <span class="s0">//Oh the tragedy, detecting opera. See the usage of isOpera for reason.</span>
+        <span class="s0">isOpera = typeof opera !== 'undefined' &amp;&amp; opera.toString() === '[object Opera]',</span>
+        <span class="s0">contexts = {},</span>
+        <span class="s0">cfg = {},</span>
+        <span class="s0">globalDefQueue = [],</span>
+        <span class="s0">useInteractive = false;</span>
+
+    <span class="s0">//Could match something like ')//comment', do not lose the prefix to comment.</span>
+    <span class="s0">function commentReplace(match, singlePrefix) {</span>
+        <span class="s0">return singlePrefix || '';</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function isFunction(it) {</span>
+        <span class="s0">return ostring.call(it) === '[object Function]';</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function isArray(it) {</span>
+        <span class="s0">return ostring.call(it) === '[object Array]';</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Helper function for iterating over an array. If the func returns</span>
+     <span class="s0">* a true value, it will break out of the loop.</span>
+     <span class="s0">*/</span>
+    <span class="s0">function each(ary, func) {</span>
+        <span class="s0">if (ary) {</span>
+            <span class="s0">var i;</span>
+            <span class="s0">for (i = 0; i &lt; ary.length; i += 1) {</span>
+                <span class="s0">if (ary[i] &amp;&amp; func(ary[i], i, ary)) {</span>
+                    <span class="s0">break;</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Helper function for iterating over an array backwards. If the func</span>
+     <span class="s0">* returns a true value, it will break out of the loop.</span>
+     <span class="s0">*/</span>
+    <span class="s0">function eachReverse(ary, func) {</span>
+        <span class="s0">if (ary) {</span>
+            <span class="s0">var i;</span>
+            <span class="s0">for (i = ary.length - 1; i &gt; -1; i -= 1) {</span>
+                <span class="s0">if (ary[i] &amp;&amp; func(ary[i], i, ary)) {</span>
+                    <span class="s0">break;</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function hasProp(obj, prop) {</span>
+        <span class="s0">return hasOwn.call(obj, prop);</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function getOwn(obj, prop) {</span>
+        <span class="s0">return hasProp(obj, prop) &amp;&amp; obj[prop];</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Cycles over properties in an object and calls a function for each</span>
+     <span class="s0">* property value. If the function returns a truthy value, then the</span>
+     <span class="s0">* iteration is stopped.</span>
+     <span class="s0">*/</span>
+    <span class="s0">function eachProp(obj, func) {</span>
+        <span class="s0">var prop;</span>
+        <span class="s0">for (prop in obj) {</span>
+            <span class="s0">if (hasProp(obj, prop)) {</span>
+                <span class="s0">if (func(obj[prop], prop)) {</span>
+                    <span class="s0">break;</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Simple function to mix in properties from source into target,</span>
+     <span class="s0">* but only if target does not already have a property of the same name.</span>
+     <span class="s0">*/</span>
+    <span class="s0">function mixin(target, source, force, deepStringMixin) {</span>
+        <span class="s0">if (source) {</span>
+            <span class="s0">eachProp(source, function (value, prop) {</span>
+                <span class="s0">if (force || !hasProp(target, prop)) {</span>
+                    <span class="s0">if (deepStringMixin &amp;&amp; typeof value === 'object' &amp;&amp; value &amp;&amp;</span>
+                        <span class="s0">!isArray(value) &amp;&amp; !isFunction(value) &amp;&amp;</span>
+                        <span class="s0">!(value instanceof RegExp)) {</span>
+
+                        <span class="s0">if (!target[prop]) {</span>
+                            <span class="s0">target[prop] = {};</span>
+                        <span class="s0">}</span>
+                        <span class="s0">mixin(target[prop], value, force, deepStringMixin);</span>
+                    <span class="s0">} else {</span>
+                        <span class="s0">target[prop] = value;</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+            <span class="s0">});</span>
+        <span class="s0">}</span>
+        <span class="s0">return target;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">//Similar to Function.prototype.bind, but the 'this' object is specified</span>
+    <span class="s0">//first, since it is easier to read/figure out what 'this' will be.</span>
+    <span class="s0">function bind(obj, fn) {</span>
+        <span class="s0">return function () {</span>
+            <span class="s0">return fn.apply(obj, arguments);</span>
+        <span class="s0">};</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function scripts() {</span>
+        <span class="s0">return document.getElementsByTagName('script');</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function defaultOnError(err) {</span>
+        <span class="s0">throw err;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">//Allow getting a global that is expressed in</span>
+    <span class="s0">//dot notation, like 'a.b.c'.</span>
+    <span class="s0">function getGlobal(value) {</span>
+        <span class="s0">if (!value) {</span>
+            <span class="s0">return value;</span>
+        <span class="s0">}</span>
+        <span class="s0">var g = global;</span>
+        <span class="s0">each(value.split('.'), function (part) {</span>
+            <span class="s0">g = g[part];</span>
+        <span class="s0">});</span>
+        <span class="s0">return g;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Constructs an error with a pointer to an URL with more information.</span>
+     <span class="s0">* @param {String} id the error ID that maps to an ID on a web page.</span>
+     <span class="s0">* @param {String} message human readable error.</span>
+     <span class="s0">* @param {Error} [err] the original error, if there is one.</span>
+     <span class="s0">*</span>
+     <span class="s0">* @returns {Error}</span>
+     <span class="s0">*/</span>
+    <span class="s0">function makeError(id, msg, err, requireModules) {</span>
+        <span class="s0">var e = new Error(msg + '\nhttp://requirejs.org/docs/errors.html#' + id);</span>
+        <span class="s0">e.requireType = id;</span>
+        <span class="s0">e.requireModules = requireModules;</span>
+        <span class="s0">if (err) {</span>
+            <span class="s0">e.originalError = err;</span>
+        <span class="s0">}</span>
+        <span class="s0">return e;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">if (typeof define !== 'undefined') {</span>
+        <span class="s0">//If a define is already in play via another AMD loader,</span>
+        <span class="s0">//do not overwrite.</span>
+        <span class="s0">return;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">if (typeof requirejs !== 'undefined') {</span>
+        <span class="s0">if (isFunction(requirejs)) {</span>
+            <span class="s0">//Do not overwrite an existing requirejs instance.</span>
+            <span class="s0">return;</span>
+        <span class="s0">}</span>
+        <span class="s0">cfg = requirejs;</span>
+        <span class="s0">requirejs = undefined;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">//Allow for a require config object</span>
+    <span class="s0">if (typeof require !== 'undefined' &amp;&amp; !isFunction(require)) {</span>
+        <span class="s0">//assume it is a config object.</span>
+        <span class="s0">cfg = require;</span>
+        <span class="s0">require = undefined;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">function newContext(contextName) {</span>
+        <span class="s0">var inCheckLoaded, Module, context, handlers,</span>
+            <span class="s0">checkLoadedTimeoutId,</span>
+            <span class="s0">config = {</span>
+                <span class="s0">//Defaults. Do not set a default for map</span>
+                <span class="s0">//config to speed up normalize(), which</span>
+                <span class="s0">//will run faster if there is no default.</span>
+                <span class="s0">waitSeconds: 7,</span>
+                <span class="s0">baseUrl: './',</span>
+                <span class="s0">paths: {},</span>
+                <span class="s0">bundles: {},</span>
+                <span class="s0">pkgs: {},</span>
+                <span class="s0">shim: {},</span>
+                <span class="s0">config: {}</span>
+            <span class="s0">},</span>
+            <span class="s0">registry = {},</span>
+            <span class="s0">//registry of just enabled modules, to speed</span>
+            <span class="s0">//cycle breaking code when lots of modules</span>
+            <span class="s0">//are registered, but not activated.</span>
+            <span class="s0">enabledRegistry = {},</span>
+            <span class="s0">undefEvents = {},</span>
+            <span class="s0">defQueue = [],</span>
+            <span class="s0">defined = {},</span>
+            <span class="s0">urlFetched = {},</span>
+            <span class="s0">bundlesMap = {},</span>
+            <span class="s0">requireCounter = 1,</span>
+            <span class="s0">unnormalizedCounter = 1;</span>
+
+        <span class="s0">/**</span>
+         <span class="s0">* Trims the . and .. from an array of path segments.</span>
+         <span class="s0">* It will keep a leading path segment if a .. will become</span>
+         <span class="s0">* the first path segment, to help with module name lookups,</span>
+         <span class="s0">* which act like paths, but can be remapped. But the end result,</span>
+         <span class="s0">* all paths that use this function should look normalized.</span>
+         <span class="s0">* NOTE: this method MODIFIES the input array.</span>
+         <span class="s0">* @param {Array} ary the array of path segments.</span>
+         <span class="s0">*/</span>
+        <span class="s0">function trimDots(ary) {</span>
+            <span class="s0">var i, part;</span>
+            <span class="s0">for (i = 0; i &lt; ary.length; i++) {</span>
+                <span class="s0">part = ary[i];</span>
+                <span class="s0">if (part === '.') {</span>
+                    <span class="s0">ary.splice(i, 1);</span>
+                    <span class="s0">i -= 1;</span>
+                <span class="s0">} else if (part === '..') {</span>
+                    <span class="s0">// If at the start, or previous value is still ..,</span>
+                    <span class="s0">// keep them so that when converted to a path it may</span>
+                    <span class="s0">// still work when converted to a path, even though</span>
+                    <span class="s0">// as an ID it is less than ideal. In larger point</span>
+                    <span class="s0">// releases, may be better to just kick out an error.</span>
+                    <span class="s0">if (i === 0 || (i === 1 &amp;&amp; ary[2] === '..') || ary[i - 1] === '..') {</span>
+                        <span class="s0">continue;</span>
+                    <span class="s0">} else if (i &gt; 0) {</span>
+                        <span class="s0">ary.splice(i - 1, 2);</span>
+                        <span class="s0">i -= 2;</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">/**</span>
+         <span class="s0">* Given a relative module name, like ./something, normalize it to</span>
+         <span class="s0">* a real name that can be mapped to a path.</span>
+         <span class="s0">* @param {String} name the relative name</span>
+         <span class="s0">* @param {String} baseName a real name that the name arg is relative</span>
+         <span class="s0">* to.</span>
+         <span class="s0">* @param {Boolean} applyMap apply the map config to the value. Should</span>
+         <span class="s0">* only be done if this normalization is for a dependency ID.</span>
+         <span class="s0">* @returns {String} normalized name</span>
+         <span class="s0">*/</span>
+        <span class="s0">function normalize(name, baseName, applyMap) {</span>
+            <span class="s0">var pkgMain, mapValue, nameParts, i, j, nameSegment, lastIndex,</span>
+                <span class="s0">foundMap, foundI, foundStarMap, starI, normalizedBaseParts,</span>
+                <span class="s0">baseParts = (baseName &amp;&amp; baseName.split('/')),</span>
+                <span class="s0">map = config.map,</span>
+                <span class="s0">starMap = map &amp;&amp; map['*'];</span>
+
+            <span class="s0">//Adjust any relative paths.</span>
+            <span class="s0">if (name) {</span>
+                <span class="s0">name = name.split('/');</span>
+                <span class="s0">lastIndex = name.length - 1;</span>
+
+                <span class="s0">// If wanting node ID compatibility, strip .js from end</span>
+                <span class="s0">// of IDs. Have to do this here, and not in nameToUrl</span>
+                <span class="s0">// because node allows either .js or non .js to map</span>
+                <span class="s0">// to same file.</span>
+                <span class="s0">if (config.nodeIdCompat &amp;&amp; jsSuffixRegExp.test(name[lastIndex])) {</span>
+                    <span class="s0">name[lastIndex] = name[lastIndex].replace(jsSuffixRegExp, '');</span>
+                <span class="s0">}</span>
+
+                <span class="s0">// Starts with a '.' so need the baseName</span>
+                <span class="s0">if (name[0].charAt(0) === '.' &amp;&amp; baseParts) {</span>
+                    <span class="s0">//Convert baseName to array, and lop off the last part,</span>
+                    <span class="s0">//so that . matches that 'directory' and not name of the baseName's</span>
+                    <span class="s0">//module. For instance, baseName of 'one/two/three', maps to</span>
+                    <span class="s0">//'one/two/three.js', but we want the directory, 'one/two' for</span>
+                    <span class="s0">//this normalization.</span>
+                    <span class="s0">normalizedBaseParts = baseParts.slice(0, baseParts.length - 1);</span>
+                    <span class="s0">name = normalizedBaseParts.concat(name);</span>
+                <span class="s0">}</span>
+
+                <span class="s0">trimDots(name);</span>
+                <span class="s0">name = name.join('/');</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//Apply map config if available.</span>
+            <span class="s0">if (applyMap &amp;&amp; map &amp;&amp; (baseParts || starMap)) {</span>
+                <span class="s0">nameParts = name.split('/');</span>
+
+                <span class="s0">outerLoop: for (i = nameParts.length; i &gt; 0; i -= 1) {</span>
+                    <span class="s0">nameSegment = nameParts.slice(0, i).join('/');</span>
+
+                    <span class="s0">if (baseParts) {</span>
+                        <span class="s0">//Find the longest baseName segment match in the config.</span>
+                        <span class="s0">//So, do joins on the biggest to smallest lengths of baseParts.</span>
+                        <span class="s0">for (j = baseParts.length; j &gt; 0; j -= 1) {</span>
+                            <span class="s0">mapValue = getOwn(map, baseParts.slice(0, j).join('/'));</span>
+
+                            <span class="s0">//baseName segment has config, find if it has one for</span>
+                            <span class="s0">//this name.</span>
+                            <span class="s0">if (mapValue) {</span>
+                                <span class="s0">mapValue = getOwn(mapValue, nameSegment);</span>
+                                <span class="s0">if (mapValue) {</span>
+                                    <span class="s0">//Match, update name to the new value.</span>
+                                    <span class="s0">foundMap = mapValue;</span>
+                                    <span class="s0">foundI = i;</span>
+                                    <span class="s0">break outerLoop;</span>
+                                <span class="s0">}</span>
+                            <span class="s0">}</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">//Check for a star map match, but just hold on to it,</span>
+                    <span class="s0">//if there is a shorter segment match later in a matching</span>
+                    <span class="s0">//config, then favor over this star map.</span>
+                    <span class="s0">if (!foundStarMap &amp;&amp; starMap &amp;&amp; getOwn(starMap, nameSegment)) {</span>
+                        <span class="s0">foundStarMap = getOwn(starMap, nameSegment);</span>
+                        <span class="s0">starI = i;</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+
+                <span class="s0">if (!foundMap &amp;&amp; foundStarMap) {</span>
+                    <span class="s0">foundMap = foundStarMap;</span>
+                    <span class="s0">foundI = starI;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">if (foundMap) {</span>
+                    <span class="s0">nameParts.splice(0, foundI, foundMap);</span>
+                    <span class="s0">name = nameParts.join('/');</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+
+            <span class="s0">// If the name points to a package's name, use</span>
+            <span class="s0">// the package main instead.</span>
+            <span class="s0">pkgMain = getOwn(config.pkgs, name);</span>
+
+            <span class="s0">return pkgMain ? pkgMain : name;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function removeScript(name) {</span>
+            <span class="s0">if (isBrowser) {</span>
+                <span class="s0">each(scripts(), function (scriptNode) {</span>
+                    <span class="s0">if (scriptNode.getAttribute('data-requiremodule') === name &amp;&amp;</span>
+                            <span class="s0">scriptNode.getAttribute('data-requirecontext') === context.contextName) {</span>
+                        <span class="s0">scriptNode.parentNode.removeChild(scriptNode);</span>
+                        <span class="s0">return true;</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function hasPathFallback(id) {</span>
+            <span class="s0">var pathConfig = getOwn(config.paths, id);</span>
+            <span class="s0">if (pathConfig &amp;&amp; isArray(pathConfig) &amp;&amp; pathConfig.length &gt; 1) {</span>
+                <span class="s0">//Pop off the first array value, since it failed, and</span>
+                <span class="s0">//retry</span>
+                <span class="s0">pathConfig.shift();</span>
+                <span class="s0">context.require.undef(id);</span>
+
+                <span class="s0">//Custom require that does not do map translation, since</span>
+                <span class="s0">//ID is &quot;absolute&quot;, already mapped/resolved.</span>
+                <span class="s0">context.makeRequire(null, {</span>
+                    <span class="s0">skipMap: true</span>
+                <span class="s0">})([id]);</span>
+
+                <span class="s0">return true;</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">//Turns a plugin!resource to [plugin, resource]</span>
+        <span class="s0">//with the plugin being undefined if the name</span>
+        <span class="s0">//did not have a plugin prefix.</span>
+        <span class="s0">function splitPrefix(name) {</span>
+            <span class="s0">var prefix,</span>
+                <span class="s0">index = name ? name.indexOf('!') : -1;</span>
+            <span class="s0">if (index &gt; -1) {</span>
+                <span class="s0">prefix = name.substring(0, index);</span>
+                <span class="s0">name = name.substring(index + 1, name.length);</span>
+            <span class="s0">}</span>
+            <span class="s0">return [prefix, name];</span>
+        <span class="s0">}</span>
+
+        <span class="s0">/**</span>
+         <span class="s0">* Creates a module mapping that includes plugin prefix, module</span>
+         <span class="s0">* name, and path. If parentModuleMap is provided it will</span>
+         <span class="s0">* also normalize the name via require.normalize()</span>
+         <span class="s0">*</span>
+         <span class="s0">* @param {String} name the module name</span>
+         <span class="s0">* @param {String} [parentModuleMap] parent module map</span>
+         <span class="s0">* for the module name, used to resolve relative names.</span>
+         <span class="s0">* @param {Boolean} isNormalized: is the ID already normalized.</span>
+         <span class="s0">* This is true if this call is done for a define() module ID.</span>
+         <span class="s0">* @param {Boolean} applyMap: apply the map config to the ID.</span>
+         <span class="s0">* Should only be true if this map is for a dependency.</span>
+         <span class="s0">*</span>
+         <span class="s0">* @returns {Object}</span>
+         <span class="s0">*/</span>
+        <span class="s0">function makeModuleMap(name, parentModuleMap, isNormalized, applyMap) {</span>
+            <span class="s0">var url, pluginModule, suffix, nameParts,</span>
+                <span class="s0">prefix = null,</span>
+                <span class="s0">parentName = parentModuleMap ? parentModuleMap.name : null,</span>
+                <span class="s0">originalName = name,</span>
+                <span class="s0">isDefine = true,</span>
+                <span class="s0">normalizedName = '';</span>
+
+            <span class="s0">//If no name, then it means it is a require call, generate an</span>
+            <span class="s0">//internal name.</span>
+            <span class="s0">if (!name) {</span>
+                <span class="s0">isDefine = false;</span>
+                <span class="s0">name = '_@r' + (requireCounter += 1);</span>
+            <span class="s0">}</span>
+
+            <span class="s0">nameParts = splitPrefix(name);</span>
+            <span class="s0">prefix = nameParts[0];</span>
+            <span class="s0">name = nameParts[1];</span>
+
+            <span class="s0">if (prefix) {</span>
+                <span class="s0">prefix = normalize(prefix, parentName, applyMap);</span>
+                <span class="s0">pluginModule = getOwn(defined, prefix);</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//Account for relative paths if there is a base name.</span>
+            <span class="s0">if (name) {</span>
+                <span class="s0">if (prefix) {</span>
+                    <span class="s0">if (isNormalized) {</span>
+                        <span class="s0">normalizedName = name;</span>
+                    <span class="s0">} else if (pluginModule &amp;&amp; pluginModule.normalize) {</span>
+                        <span class="s0">//Plugin is loaded, use its normalize method.</span>
+                        <span class="s0">normalizedName = pluginModule.normalize(name, function (name) {</span>
+                            <span class="s0">return normalize(name, parentName, applyMap);</span>
+                        <span class="s0">});</span>
+                    <span class="s0">} else {</span>
+                        <span class="s0">// If nested plugin references, then do not try to</span>
+                        <span class="s0">// normalize, as it will not normalize correctly. This</span>
+                        <span class="s0">// places a restriction on resourceIds, and the longer</span>
+                        <span class="s0">// term solution is not to normalize until plugins are</span>
+                        <span class="s0">// loaded and all normalizations to allow for async</span>
+                        <span class="s0">// loading of a loader plugin. But for now, fixes the</span>
+                        <span class="s0">// common uses. Details in #1131</span>
+                        <span class="s0">normalizedName = name.indexOf('!') === -1 ?</span>
+                                         <span class="s0">normalize(name, parentName, applyMap) :</span>
+                                         <span class="s0">name;</span>
+                    <span class="s0">}</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">//A regular module.</span>
+                    <span class="s0">normalizedName = normalize(name, parentName, applyMap);</span>
+
+                    <span class="s0">//Normalized name may be a plugin ID due to map config</span>
+                    <span class="s0">//application in normalize. The map config values must</span>
+                    <span class="s0">//already be normalized, so do not need to redo that part.</span>
+                    <span class="s0">nameParts = splitPrefix(normalizedName);</span>
+                    <span class="s0">prefix = nameParts[0];</span>
+                    <span class="s0">normalizedName = nameParts[1];</span>
+                    <span class="s0">isNormalized = true;</span>
+
+                    <span class="s0">url = context.nameToUrl(normalizedName);</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//If the id is a plugin id that cannot be determined if it needs</span>
+            <span class="s0">//normalization, stamp it with a unique ID so two matching relative</span>
+            <span class="s0">//ids that may conflict can be separate.</span>
+            <span class="s0">suffix = prefix &amp;&amp; !pluginModule &amp;&amp; !isNormalized ?</span>
+                     <span class="s0">'_unnormalized' + (unnormalizedCounter += 1) :</span>
+                     <span class="s0">'';</span>
+
+            <span class="s0">return {</span>
+                <span class="s0">prefix: prefix,</span>
+                <span class="s0">name: normalizedName,</span>
+                <span class="s0">parentMap: parentModuleMap,</span>
+                <span class="s0">unnormalized: !!suffix,</span>
+                <span class="s0">url: url,</span>
+                <span class="s0">originalName: originalName,</span>
+                <span class="s0">isDefine: isDefine,</span>
+                <span class="s0">id: (prefix ?</span>
+                        <span class="s0">prefix + '!' + normalizedName :</span>
+                        <span class="s0">normalizedName) + suffix</span>
+            <span class="s0">};</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function getModule(depMap) {</span>
+            <span class="s0">var id = depMap.id,</span>
+                <span class="s0">mod = getOwn(registry, id);</span>
+
+            <span class="s0">if (!mod) {</span>
+                <span class="s0">mod = registry[id] = new context.Module(depMap);</span>
+            <span class="s0">}</span>
+
+            <span class="s0">return mod;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function on(depMap, name, fn) {</span>
+            <span class="s0">var id = depMap.id,</span>
+                <span class="s0">mod = getOwn(registry, id);</span>
+
+            <span class="s0">if (hasProp(defined, id) &amp;&amp;</span>
+                    <span class="s0">(!mod || mod.defineEmitComplete)) {</span>
+                <span class="s0">if (name === 'defined') {</span>
+                    <span class="s0">fn(defined[id]);</span>
+                <span class="s0">}</span>
+            <span class="s0">} else {</span>
+                <span class="s0">mod = getModule(depMap);</span>
+                <span class="s0">if (mod.error &amp;&amp; name === 'error') {</span>
+                    <span class="s0">fn(mod.error);</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">mod.on(name, fn);</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function onError(err, errback) {</span>
+            <span class="s0">var ids = err.requireModules,</span>
+                <span class="s0">notified = false;</span>
+
+            <span class="s0">if (errback) {</span>
+                <span class="s0">errback(err);</span>
+            <span class="s0">} else {</span>
+                <span class="s0">each(ids, function (id) {</span>
+                    <span class="s0">var mod = getOwn(registry, id);</span>
+                    <span class="s0">if (mod) {</span>
+                        <span class="s0">//Set error on module, so it skips timeout checks.</span>
+                        <span class="s0">mod.error = err;</span>
+                        <span class="s0">if (mod.events.error) {</span>
+                            <span class="s0">notified = true;</span>
+                            <span class="s0">mod.emit('error', err);</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+
+                <span class="s0">if (!notified) {</span>
+                    <span class="s0">req.onError(err);</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">/**</span>
+         <span class="s0">* Internal method to transfer globalQueue items to this context's</span>
+         <span class="s0">* defQueue.</span>
+         <span class="s0">*/</span>
+        <span class="s0">function takeGlobalQueue() {</span>
+            <span class="s0">//Push all the globalDefQueue items into the context's defQueue</span>
+            <span class="s0">if (globalDefQueue.length) {</span>
+                <span class="s0">each(globalDefQueue, function(queueItem) {</span>
+                    <span class="s0">var id = queueItem[0];</span>
+                    <span class="s0">if (typeof id === 'string') {</span>
+                        <span class="s0">context.defQueueMap[id] = true;</span>
+                    <span class="s0">}</span>
+                    <span class="s0">defQueue.push(queueItem);</span>
+                <span class="s0">});</span>
+                <span class="s0">globalDefQueue = [];</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">handlers = {</span>
+            <span class="s0">'require': function (mod) {</span>
+                <span class="s0">if (mod.require) {</span>
+                    <span class="s0">return mod.require;</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">return (mod.require = context.makeRequire(mod.map));</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+            <span class="s0">'exports': function (mod) {</span>
+                <span class="s0">mod.usingExports = true;</span>
+                <span class="s0">if (mod.map.isDefine) {</span>
+                    <span class="s0">if (mod.exports) {</span>
+                        <span class="s0">return (defined[mod.map.id] = mod.exports);</span>
+                    <span class="s0">} else {</span>
+                        <span class="s0">return (mod.exports = defined[mod.map.id] = {});</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+            <span class="s0">'module': function (mod) {</span>
+                <span class="s0">if (mod.module) {</span>
+                    <span class="s0">return mod.module;</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">return (mod.module = {</span>
+                        <span class="s0">id: mod.map.id,</span>
+                        <span class="s0">uri: mod.map.url,</span>
+                        <span class="s0">config: function () {</span>
+                            <span class="s0">return getOwn(config.config, mod.map.id) || {};</span>
+                        <span class="s0">},</span>
+                        <span class="s0">exports: mod.exports || (mod.exports = {})</span>
+                    <span class="s0">});</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">};</span>
+
+        <span class="s0">function cleanRegistry(id) {</span>
+            <span class="s0">//Clean up machinery used for waiting modules.</span>
+            <span class="s0">delete registry[id];</span>
+            <span class="s0">delete enabledRegistry[id];</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function breakCycle(mod, traced, processed) {</span>
+            <span class="s0">var id = mod.map.id;</span>
+
+            <span class="s0">if (mod.error) {</span>
+                <span class="s0">mod.emit('error', mod.error);</span>
+            <span class="s0">} else {</span>
+                <span class="s0">traced[id] = true;</span>
+                <span class="s0">each(mod.depMaps, function (depMap, i) {</span>
+                    <span class="s0">var depId = depMap.id,</span>
+                        <span class="s0">dep = getOwn(registry, depId);</span>
+
+                    <span class="s0">//Only force things that have not completed</span>
+                    <span class="s0">//being defined, so still in the registry,</span>
+                    <span class="s0">//and only if it has not been matched up</span>
+                    <span class="s0">//in the module already.</span>
+                    <span class="s0">if (dep &amp;&amp; !mod.depMatched[i] &amp;&amp; !processed[depId]) {</span>
+                        <span class="s0">if (getOwn(traced, depId)) {</span>
+                            <span class="s0">mod.defineDep(i, defined[depId]);</span>
+                            <span class="s0">mod.check(); //pass false?</span>
+                        <span class="s0">} else {</span>
+                            <span class="s0">breakCycle(dep, traced, processed);</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+                <span class="s0">processed[id] = true;</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function checkLoaded() {</span>
+            <span class="s0">var err, usingPathFallback,</span>
+                <span class="s0">waitInterval = config.waitSeconds * 1000,</span>
+                <span class="s0">//It is possible to disable the wait interval by using waitSeconds of 0.</span>
+                <span class="s0">expired = waitInterval &amp;&amp; (context.startTime + waitInterval) &lt; new Date().getTime(),</span>
+                <span class="s0">noLoads = [],</span>
+                <span class="s0">reqCalls = [],</span>
+                <span class="s0">stillLoading = false,</span>
+                <span class="s0">needCycleCheck = true;</span>
+
+            <span class="s0">//Do not bother if this call was a result of a cycle break.</span>
+            <span class="s0">if (inCheckLoaded) {</span>
+                <span class="s0">return;</span>
+            <span class="s0">}</span>
+
+            <span class="s0">inCheckLoaded = true;</span>
+
+            <span class="s0">//Figure out the state of all the modules.</span>
+            <span class="s0">eachProp(enabledRegistry, function (mod) {</span>
+                <span class="s0">var map = mod.map,</span>
+                    <span class="s0">modId = map.id;</span>
+
+                <span class="s0">//Skip things that are not enabled or in error state.</span>
+                <span class="s0">if (!mod.enabled) {</span>
+                    <span class="s0">return;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">if (!map.isDefine) {</span>
+                    <span class="s0">reqCalls.push(mod);</span>
+                <span class="s0">}</span>
+
+                <span class="s0">if (!mod.error) {</span>
+                    <span class="s0">//If the module should be executed, and it has not</span>
+                    <span class="s0">//been inited and time is up, remember it.</span>
+                    <span class="s0">if (!mod.inited &amp;&amp; expired) {</span>
+                        <span class="s0">if (hasPathFallback(modId)) {</span>
+                            <span class="s0">usingPathFallback = true;</span>
+                            <span class="s0">stillLoading = true;</span>
+                        <span class="s0">} else {</span>
+                            <span class="s0">noLoads.push(modId);</span>
+                            <span class="s0">removeScript(modId);</span>
+                        <span class="s0">}</span>
+                    <span class="s0">} else if (!mod.inited &amp;&amp; mod.fetched &amp;&amp; map.isDefine) {</span>
+                        <span class="s0">stillLoading = true;</span>
+                        <span class="s0">if (!map.prefix) {</span>
+                            <span class="s0">//No reason to keep looking for unfinished</span>
+                            <span class="s0">//loading. If the only stillLoading is a</span>
+                            <span class="s0">//plugin resource though, keep going,</span>
+                            <span class="s0">//because it may be that a plugin resource</span>
+                            <span class="s0">//is waiting on a non-plugin cycle.</span>
+                            <span class="s0">return (needCycleCheck = false);</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+            <span class="s0">});</span>
+
+            <span class="s0">if (expired &amp;&amp; noLoads.length) {</span>
+                <span class="s0">//If wait time expired, throw error of unloaded modules.</span>
+                <span class="s0">err = makeError('timeout', 'Load timeout for modules: ' + noLoads, null, noLoads);</span>
+                <span class="s0">err.contextName = context.contextName;</span>
+                <span class="s0">return onError(err);</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//Not expired, check for a cycle.</span>
+            <span class="s0">if (needCycleCheck) {</span>
+                <span class="s0">each(reqCalls, function (mod) {</span>
+                    <span class="s0">breakCycle(mod, {}, {});</span>
+                <span class="s0">});</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//If still waiting on loads, and the waiting load is something</span>
+            <span class="s0">//other than a plugin resource, or there are still outstanding</span>
+            <span class="s0">//scripts, then just try back later.</span>
+            <span class="s0">if ((!expired || usingPathFallback) &amp;&amp; stillLoading) {</span>
+                <span class="s0">//Something is still waiting to load. Wait for it, but only</span>
+                <span class="s0">//if a timeout is not already in effect.</span>
+                <span class="s0">if ((isBrowser || isWebWorker) &amp;&amp; !checkLoadedTimeoutId) {</span>
+                    <span class="s0">checkLoadedTimeoutId = setTimeout(function () {</span>
+                        <span class="s0">checkLoadedTimeoutId = 0;</span>
+                        <span class="s0">checkLoaded();</span>
+                    <span class="s0">}, 50);</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+
+            <span class="s0">inCheckLoaded = false;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">Module = function (map) {</span>
+            <span class="s0">this.events = getOwn(undefEvents, map.id) || {};</span>
+            <span class="s0">this.map = map;</span>
+            <span class="s0">this.shim = getOwn(config.shim, map.id);</span>
+            <span class="s0">this.depExports = [];</span>
+            <span class="s0">this.depMaps = [];</span>
+            <span class="s0">this.depMatched = [];</span>
+            <span class="s0">this.pluginMaps = {};</span>
+            <span class="s0">this.depCount = 0;</span>
+
+            <span class="s0">/* this.exports this.factory</span>
+               <span class="s0">this.depMaps = [],</span>
+               <span class="s0">this.enabled, this.fetched</span>
+            <span class="s0">*/</span>
+        <span class="s0">};</span>
+
+        <span class="s0">Module.prototype = {</span>
+            <span class="s0">init: function (depMaps, factory, errback, options) {</span>
+                <span class="s0">options = options || {};</span>
+
+                <span class="s0">//Do not do more inits if already done. Can happen if there</span>
+                <span class="s0">//are multiple define calls for the same module. That is not</span>
+                <span class="s0">//a normal, common case, but it is also not unexpected.</span>
+                <span class="s0">if (this.inited) {</span>
+                    <span class="s0">return;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">this.factory = factory;</span>
+
+                <span class="s0">if (errback) {</span>
+                    <span class="s0">//Register for errors on this module.</span>
+                    <span class="s0">this.on('error', errback);</span>
+                <span class="s0">} else if (this.events.error) {</span>
+                    <span class="s0">//If no errback already, but there are error listeners</span>
+                    <span class="s0">//on this module, set up an errback to pass to the deps.</span>
+                    <span class="s0">errback = bind(this, function (err) {</span>
+                        <span class="s0">this.emit('error', err);</span>
+                    <span class="s0">});</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Do a copy of the dependency array, so that</span>
+                <span class="s0">//source inputs are not modified. For example</span>
+                <span class="s0">//&quot;shim&quot; deps are passed in here directly, and</span>
+                <span class="s0">//doing a direct modification of the depMaps array</span>
+                <span class="s0">//would affect that config.</span>
+                <span class="s0">this.depMaps = depMaps &amp;&amp; depMaps.slice(0);</span>
+
+                <span class="s0">this.errback = errback;</span>
+
+                <span class="s0">//Indicate this module has be initialized</span>
+                <span class="s0">this.inited = true;</span>
+
+                <span class="s0">this.ignore = options.ignore;</span>
+
+                <span class="s0">//Could have option to init this module in enabled mode,</span>
+                <span class="s0">//or could have been previously marked as enabled. However,</span>
+                <span class="s0">//the dependencies are not known until init is called. So</span>
+                <span class="s0">//if enabled previously, now trigger dependencies as enabled.</span>
+                <span class="s0">if (options.enabled || this.enabled) {</span>
+                    <span class="s0">//Enable this module and dependencies.</span>
+                    <span class="s0">//Will call this.check()</span>
+                    <span class="s0">this.enable();</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">this.check();</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">defineDep: function (i, depExports) {</span>
+                <span class="s0">//Because of cycles, defined callback for a given</span>
+                <span class="s0">//export can be called more than once.</span>
+                <span class="s0">if (!this.depMatched[i]) {</span>
+                    <span class="s0">this.depMatched[i] = true;</span>
+                    <span class="s0">this.depCount -= 1;</span>
+                    <span class="s0">this.depExports[i] = depExports;</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">fetch: function () {</span>
+                <span class="s0">if (this.fetched) {</span>
+                    <span class="s0">return;</span>
+                <span class="s0">}</span>
+                <span class="s0">this.fetched = true;</span>
+
+                <span class="s0">context.startTime = (new Date()).getTime();</span>
+
+                <span class="s0">var map = this.map;</span>
+
+                <span class="s0">//If the manager is for a plugin managed resource,</span>
+                <span class="s0">//ask the plugin to load it now.</span>
+                <span class="s0">if (this.shim) {</span>
+                    <span class="s0">context.makeRequire(this.map, {</span>
+                        <span class="s0">enableBuildCallback: true</span>
+                    <span class="s0">})(this.shim.deps || [], bind(this, function () {</span>
+                        <span class="s0">return map.prefix ? this.callPlugin() : this.load();</span>
+                    <span class="s0">}));</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">//Regular dependency.</span>
+                    <span class="s0">return map.prefix ? this.callPlugin() : this.load();</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">load: function () {</span>
+                <span class="s0">var url = this.map.url;</span>
+
+                <span class="s0">//Regular dependency.</span>
+                <span class="s0">if (!urlFetched[url]) {</span>
+                    <span class="s0">urlFetched[url] = true;</span>
+                    <span class="s0">context.load(this.map.id, url);</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Checks if the module is ready to define itself, and if so,</span>
+             <span class="s0">* define it.</span>
+             <span class="s0">*/</span>
+            <span class="s0">check: function () {</span>
+                <span class="s0">if (!this.enabled || this.enabling) {</span>
+                    <span class="s0">return;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">var err, cjsModule,</span>
+                    <span class="s0">id = this.map.id,</span>
+                    <span class="s0">depExports = this.depExports,</span>
+                    <span class="s0">exports = this.exports,</span>
+                    <span class="s0">factory = this.factory;</span>
+
+                <span class="s0">if (!this.inited) {</span>
+                    <span class="s0">// Only fetch if not already in the defQueue.</span>
+                    <span class="s0">if (!hasProp(context.defQueueMap, id)) {</span>
+                        <span class="s0">this.fetch();</span>
+                    <span class="s0">}</span>
+                <span class="s0">} else if (this.error) {</span>
+                    <span class="s0">this.emit('error', this.error);</span>
+                <span class="s0">} else if (!this.defining) {</span>
+                    <span class="s0">//The factory could trigger another require call</span>
+                    <span class="s0">//that would result in checking this module to</span>
+                    <span class="s0">//define itself again. If already in the process</span>
+                    <span class="s0">//of doing that, skip this work.</span>
+                    <span class="s0">this.defining = true;</span>
+
+                    <span class="s0">if (this.depCount &lt; 1 &amp;&amp; !this.defined) {</span>
+                        <span class="s0">if (isFunction(factory)) {</span>
+                            <span class="s0">//If there is an error listener, favor passing</span>
+                            <span class="s0">//to that instead of throwing an error. However,</span>
+                            <span class="s0">//only do it for define()'d  modules. require</span>
+                            <span class="s0">//errbacks should not be called for failures in</span>
+                            <span class="s0">//their callbacks (#699). However if a global</span>
+                            <span class="s0">//onError is set, use that.</span>
+                            <span class="s0">if ((this.events.error &amp;&amp; this.map.isDefine) ||</span>
+                                <span class="s0">req.onError !== defaultOnError) {</span>
+                                <span class="s0">try {</span>
+                                    <span class="s0">exports = context.execCb(id, factory, depExports, exports);</span>
+                                <span class="s0">} catch (e) {</span>
+                                    <span class="s0">err = e;</span>
+                                <span class="s0">}</span>
+                            <span class="s0">} else {</span>
+                                <span class="s0">exports = context.execCb(id, factory, depExports, exports);</span>
+                            <span class="s0">}</span>
+
+                            <span class="s0">// Favor return value over exports. If node/cjs in play,</span>
+                            <span class="s0">// then will not have a return value anyway. Favor</span>
+                            <span class="s0">// module.exports assignment over exports object.</span>
+                            <span class="s0">if (this.map.isDefine &amp;&amp; exports === undefined) {</span>
+                                <span class="s0">cjsModule = this.module;</span>
+                                <span class="s0">if (cjsModule) {</span>
+                                    <span class="s0">exports = cjsModule.exports;</span>
+                                <span class="s0">} else if (this.usingExports) {</span>
+                                    <span class="s0">//exports already set the defined value.</span>
+                                    <span class="s0">exports = this.exports;</span>
+                                <span class="s0">}</span>
+                            <span class="s0">}</span>
+
+                            <span class="s0">if (err) {</span>
+                                <span class="s0">err.requireMap = this.map;</span>
+                                <span class="s0">err.requireModules = this.map.isDefine ? [this.map.id] : null;</span>
+                                <span class="s0">err.requireType = this.map.isDefine ? 'define' : 'require';</span>
+                                <span class="s0">return onError((this.error = err));</span>
+                            <span class="s0">}</span>
+
+                        <span class="s0">} else {</span>
+                            <span class="s0">//Just a literal value</span>
+                            <span class="s0">exports = factory;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">this.exports = exports;</span>
+
+                        <span class="s0">if (this.map.isDefine &amp;&amp; !this.ignore) {</span>
+                            <span class="s0">defined[id] = exports;</span>
+
+                            <span class="s0">if (req.onResourceLoad) {</span>
+                                <span class="s0">var resLoadMaps = [];</span>
+                                <span class="s0">each(this.depMaps, function (depMap) {</span>
+                                    <span class="s0">resLoadMaps.push(depMap.normalizedMap || depMap);</span>
+                                <span class="s0">});</span>
+                                <span class="s0">req.onResourceLoad(context, this.map, resLoadMaps);</span>
+                            <span class="s0">}</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Clean up</span>
+                        <span class="s0">cleanRegistry(id);</span>
+
+                        <span class="s0">this.defined = true;</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">//Finished the define stage. Allow calling check again</span>
+                    <span class="s0">//to allow define notifications below in the case of a</span>
+                    <span class="s0">//cycle.</span>
+                    <span class="s0">this.defining = false;</span>
+
+                    <span class="s0">if (this.defined &amp;&amp; !this.defineEmitted) {</span>
+                        <span class="s0">this.defineEmitted = true;</span>
+                        <span class="s0">this.emit('defined', this.exports);</span>
+                        <span class="s0">this.defineEmitComplete = true;</span>
+                    <span class="s0">}</span>
+
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">callPlugin: function () {</span>
+                <span class="s0">var map = this.map,</span>
+                    <span class="s0">id = map.id,</span>
+                    <span class="s0">//Map already normalized the prefix.</span>
+                    <span class="s0">pluginMap = makeModuleMap(map.prefix);</span>
+
+                <span class="s0">//Mark this as a dependency for this plugin, so it</span>
+                <span class="s0">//can be traced for cycles.</span>
+                <span class="s0">this.depMaps.push(pluginMap);</span>
+
+                <span class="s0">on(pluginMap, 'defined', bind(this, function (plugin) {</span>
+                    <span class="s0">var load, normalizedMap, normalizedMod,</span>
+                        <span class="s0">bundleId = getOwn(bundlesMap, this.map.id),</span>
+                        <span class="s0">name = this.map.name,</span>
+                        <span class="s0">parentName = this.map.parentMap ? this.map.parentMap.name : null,</span>
+                        <span class="s0">localRequire = context.makeRequire(map.parentMap, {</span>
+                            <span class="s0">enableBuildCallback: true</span>
+                        <span class="s0">});</span>
+
+                    <span class="s0">//If current map is not normalized, wait for that</span>
+                    <span class="s0">//normalized name to load instead of continuing.</span>
+                    <span class="s0">if (this.map.unnormalized) {</span>
+                        <span class="s0">//Normalize the ID if the plugin allows it.</span>
+                        <span class="s0">if (plugin.normalize) {</span>
+                            <span class="s0">name = plugin.normalize(name, function (name) {</span>
+                                <span class="s0">return normalize(name, parentName, true);</span>
+                            <span class="s0">}) || '';</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//prefix and name should already be normalized, no need</span>
+                        <span class="s0">//for applying map config again either.</span>
+                        <span class="s0">normalizedMap = makeModuleMap(map.prefix + '!' + name,</span>
+                                                      <span class="s0">this.map.parentMap,</span>
+                                                      <span class="s0">true);</span>
+                        <span class="s0">on(normalizedMap,</span>
+                            <span class="s0">'defined', bind(this, function (value) {</span>
+                                <span class="s0">this.map.normalizedMap = normalizedMap;</span>
+                                <span class="s0">this.init([], function () { return value; }, null, {</span>
+                                    <span class="s0">enabled: true,</span>
+                                    <span class="s0">ignore: true</span>
+                                <span class="s0">});</span>
+                            <span class="s0">}));</span>
+
+                        <span class="s0">normalizedMod = getOwn(registry, normalizedMap.id);</span>
+                        <span class="s0">if (normalizedMod) {</span>
+                            <span class="s0">//Mark this as a dependency for this plugin, so it</span>
+                            <span class="s0">//can be traced for cycles.</span>
+                            <span class="s0">this.depMaps.push(normalizedMap);</span>
+
+                            <span class="s0">if (this.events.error) {</span>
+                                <span class="s0">normalizedMod.on('error', bind(this, function (err) {</span>
+                                    <span class="s0">this.emit('error', err);</span>
+                                <span class="s0">}));</span>
+                            <span class="s0">}</span>
+                            <span class="s0">normalizedMod.enable();</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">return;</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">//If a paths config, then just load that file instead to</span>
+                    <span class="s0">//resolve the plugin, as it is built into that paths layer.</span>
+                    <span class="s0">if (bundleId) {</span>
+                        <span class="s0">this.map.url = context.nameToUrl(bundleId);</span>
+                        <span class="s0">this.load();</span>
+                        <span class="s0">return;</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">load = bind(this, function (value) {</span>
+                        <span class="s0">this.init([], function () { return value; }, null, {</span>
+                            <span class="s0">enabled: true</span>
+                        <span class="s0">});</span>
+                    <span class="s0">});</span>
+
+                    <span class="s0">load.error = bind(this, function (err) {</span>
+                        <span class="s0">this.inited = true;</span>
+                        <span class="s0">this.error = err;</span>
+                        <span class="s0">err.requireModules = [id];</span>
+
+                        <span class="s0">//Remove temp unnormalized modules for this module,</span>
+                        <span class="s0">//since they will never be resolved otherwise now.</span>
+                        <span class="s0">eachProp(registry, function (mod) {</span>
+                            <span class="s0">if (mod.map.id.indexOf(id + '_unnormalized') === 0) {</span>
+                                <span class="s0">cleanRegistry(mod.map.id);</span>
+                            <span class="s0">}</span>
+                        <span class="s0">});</span>
+
+                        <span class="s0">onError(err);</span>
+                    <span class="s0">});</span>
+
+                    <span class="s0">//Allow plugins to load other code without having to know the</span>
+                    <span class="s0">//context or how to 'complete' the load.</span>
+                    <span class="s0">load.fromText = bind(this, function (text, textAlt) {</span>
+                        <span class="s0">/*jslint evil: true */</span>
+                        <span class="s0">var moduleName = map.name,</span>
+                            <span class="s0">moduleMap = makeModuleMap(moduleName),</span>
+                            <span class="s0">hasInteractive = useInteractive;</span>
+
+                        <span class="s0">//As of 2.1.0, support just passing the text, to reinforce</span>
+                        <span class="s0">//fromText only being called once per resource. Still</span>
+                        <span class="s0">//support old style of passing moduleName but discard</span>
+                        <span class="s0">//that moduleName in favor of the internal ref.</span>
+                        <span class="s0">if (textAlt) {</span>
+                            <span class="s0">text = textAlt;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Turn off interactive script matching for IE for any define</span>
+                        <span class="s0">//calls in the text, then turn it back on at the end.</span>
+                        <span class="s0">if (hasInteractive) {</span>
+                            <span class="s0">useInteractive = false;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Prime the system by creating a module instance for</span>
+                        <span class="s0">//it.</span>
+                        <span class="s0">getModule(moduleMap);</span>
+
+                        <span class="s0">//Transfer any config to this other module.</span>
+                        <span class="s0">if (hasProp(config.config, id)) {</span>
+                            <span class="s0">config.config[moduleName] = config.config[id];</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">try {</span>
+                            <span class="s0">req.exec(text);</span>
+                        <span class="s0">} catch (e) {</span>
+                            <span class="s0">return onError(makeError('fromtexteval',</span>
+                                             <span class="s0">'fromText eval for ' + id +</span>
+                                            <span class="s0">' failed: ' + e,</span>
+                                             <span class="s0">e,</span>
+                                             <span class="s0">[id]));</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">if (hasInteractive) {</span>
+                            <span class="s0">useInteractive = true;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Mark this as a dependency for the plugin</span>
+                        <span class="s0">//resource</span>
+                        <span class="s0">this.depMaps.push(moduleMap);</span>
+
+                        <span class="s0">//Support anonymous modules.</span>
+                        <span class="s0">context.completeLoad(moduleName);</span>
+
+                        <span class="s0">//Bind the value of that module to the value for this</span>
+                        <span class="s0">//resource ID.</span>
+                        <span class="s0">localRequire([moduleName], load);</span>
+                    <span class="s0">});</span>
+
+                    <span class="s0">//Use parentName here since the plugin's name is not reliable,</span>
+                    <span class="s0">//could be some weird string with no path that actually wants to</span>
+                    <span class="s0">//reference the parentName's path.</span>
+                    <span class="s0">plugin.load(map.name, localRequire, load, config);</span>
+                <span class="s0">}));</span>
+
+                <span class="s0">context.enable(pluginMap, this);</span>
+                <span class="s0">this.pluginMaps[pluginMap.id] = pluginMap;</span>
+            <span class="s0">},</span>
+
+            <span class="s0">enable: function () {</span>
+                <span class="s0">enabledRegistry[this.map.id] = this;</span>
+                <span class="s0">this.enabled = true;</span>
+
+                <span class="s0">//Set flag mentioning that the module is enabling,</span>
+                <span class="s0">//so that immediate calls to the defined callbacks</span>
+                <span class="s0">//for dependencies do not trigger inadvertent load</span>
+                <span class="s0">//with the depCount still being zero.</span>
+                <span class="s0">this.enabling = true;</span>
+
+                <span class="s0">//Enable each dependency</span>
+                <span class="s0">each(this.depMaps, bind(this, function (depMap, i) {</span>
+                    <span class="s0">var id, mod, handler;</span>
+
+                    <span class="s0">if (typeof depMap === 'string') {</span>
+                        <span class="s0">//Dependency needs to be converted to a depMap</span>
+                        <span class="s0">//and wired up to this module.</span>
+                        <span class="s0">depMap = makeModuleMap(depMap,</span>
+                                               <span class="s0">(this.map.isDefine ? this.map : this.map.parentMap),</span>
+                                               <span class="s0">false,</span>
+                                               <span class="s0">!this.skipMap);</span>
+                        <span class="s0">this.depMaps[i] = depMap;</span>
+
+                        <span class="s0">handler = getOwn(handlers, depMap.id);</span>
+
+                        <span class="s0">if (handler) {</span>
+                            <span class="s0">this.depExports[i] = handler(this);</span>
+                            <span class="s0">return;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">this.depCount += 1;</span>
+
+                        <span class="s0">on(depMap, 'defined', bind(this, function (depExports) {</span>
+                            <span class="s0">if (this.undefed) {</span>
+                                <span class="s0">return;</span>
+                            <span class="s0">}</span>
+                            <span class="s0">this.defineDep(i, depExports);</span>
+                            <span class="s0">this.check();</span>
+                        <span class="s0">}));</span>
+
+                        <span class="s0">if (this.errback) {</span>
+                            <span class="s0">on(depMap, 'error', bind(this, this.errback));</span>
+                        <span class="s0">} else if (this.events.error) {</span>
+                            <span class="s0">// No direct errback on this module, but something</span>
+                            <span class="s0">// else is listening for errors, so be sure to</span>
+                            <span class="s0">// propagate the error correctly.</span>
+                            <span class="s0">on(depMap, 'error', bind(this, function(err) {</span>
+                                <span class="s0">this.emit('error', err);</span>
+                            <span class="s0">}));</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">id = depMap.id;</span>
+                    <span class="s0">mod = registry[id];</span>
+
+                    <span class="s0">//Skip special modules like 'require', 'exports', 'module'</span>
+                    <span class="s0">//Also, don't call enable if it is already enabled,</span>
+                    <span class="s0">//important in circular dependency cases.</span>
+                    <span class="s0">if (!hasProp(handlers, id) &amp;&amp; mod &amp;&amp; !mod.enabled) {</span>
+                        <span class="s0">context.enable(depMap, this);</span>
+                    <span class="s0">}</span>
+                <span class="s0">}));</span>
+
+                <span class="s0">//Enable each plugin that is used in</span>
+                <span class="s0">//a dependency</span>
+                <span class="s0">eachProp(this.pluginMaps, bind(this, function (pluginMap) {</span>
+                    <span class="s0">var mod = getOwn(registry, pluginMap.id);</span>
+                    <span class="s0">if (mod &amp;&amp; !mod.enabled) {</span>
+                        <span class="s0">context.enable(pluginMap, this);</span>
+                    <span class="s0">}</span>
+                <span class="s0">}));</span>
+
+                <span class="s0">this.enabling = false;</span>
+
+                <span class="s0">this.check();</span>
+            <span class="s0">},</span>
+
+            <span class="s0">on: function (name, cb) {</span>
+                <span class="s0">var cbs = this.events[name];</span>
+                <span class="s0">if (!cbs) {</span>
+                    <span class="s0">cbs = this.events[name] = [];</span>
+                <span class="s0">}</span>
+                <span class="s0">cbs.push(cb);</span>
+            <span class="s0">},</span>
+
+            <span class="s0">emit: function (name, evt) {</span>
+                <span class="s0">each(this.events[name], function (cb) {</span>
+                    <span class="s0">cb(evt);</span>
+                <span class="s0">});</span>
+                <span class="s0">if (name === 'error') {</span>
+                    <span class="s0">//Now that the error handler was triggered, remove</span>
+                    <span class="s0">//the listeners, since this broken Module instance</span>
+                    <span class="s0">//can stay around for a while in the registry.</span>
+                    <span class="s0">delete this.events[name];</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">};</span>
+
+        <span class="s0">function callGetModule(args) {</span>
+            <span class="s0">//Skip modules already defined.</span>
+            <span class="s0">if (!hasProp(defined, args[0])) {</span>
+                <span class="s0">getModule(makeModuleMap(args[0], null, true)).init(args[1], args[2]);</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function removeListener(node, func, name, ieName) {</span>
+            <span class="s0">//Favor detachEvent because of IE9</span>
+            <span class="s0">//issue, see attachEvent/addEventListener comment elsewhere</span>
+            <span class="s0">//in this file.</span>
+            <span class="s0">if (node.detachEvent &amp;&amp; !isOpera) {</span>
+                <span class="s0">//Probably IE. If not it will throw an error, which will be</span>
+                <span class="s0">//useful to know.</span>
+                <span class="s0">if (ieName) {</span>
+                    <span class="s0">node.detachEvent(ieName, func);</span>
+                <span class="s0">}</span>
+            <span class="s0">} else {</span>
+                <span class="s0">node.removeEventListener(name, func, false);</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">/**</span>
+         <span class="s0">* Given an event from a script node, get the requirejs info from it,</span>
+         <span class="s0">* and then removes the event listeners on the node.</span>
+         <span class="s0">* @param {Event} evt</span>
+         <span class="s0">* @returns {Object}</span>
+         <span class="s0">*/</span>
+        <span class="s0">function getScriptData(evt) {</span>
+            <span class="s0">//Using currentTarget instead of target for Firefox 2.0's sake. Not</span>
+            <span class="s0">//all old browsers will be supported, but this one was easy enough</span>
+            <span class="s0">//to support and still makes sense.</span>
+            <span class="s0">var node = evt.currentTarget || evt.srcElement;</span>
+
+            <span class="s0">//Remove the listeners once here.</span>
+            <span class="s0">removeListener(node, context.onScriptLoad, 'load', 'onreadystatechange');</span>
+            <span class="s0">removeListener(node, context.onScriptError, 'error');</span>
+
+            <span class="s0">return {</span>
+                <span class="s0">node: node,</span>
+                <span class="s0">id: node &amp;&amp; node.getAttribute('data-requiremodule')</span>
+            <span class="s0">};</span>
+        <span class="s0">}</span>
+
+        <span class="s0">function intakeDefines() {</span>
+            <span class="s0">var args;</span>
+
+            <span class="s0">//Any defined modules in the global queue, intake them now.</span>
+            <span class="s0">takeGlobalQueue();</span>
+
+            <span class="s0">//Make sure any remaining defQueue items get properly processed.</span>
+            <span class="s0">while (defQueue.length) {</span>
+                <span class="s0">args = defQueue.shift();</span>
+                <span class="s0">if (args[0] === null) {</span>
+                    <span class="s0">return onError(makeError('mismatch', 'Mismatched anonymous define() module: ' +</span>
+                        <span class="s0">args[args.length - 1]));</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">//args are id, deps, factory. Should be normalized by the</span>
+                    <span class="s0">//define() function.</span>
+                    <span class="s0">callGetModule(args);</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+            <span class="s0">context.defQueueMap = {};</span>
+        <span class="s0">}</span>
+
+        <span class="s0">context = {</span>
+            <span class="s0">config: config,</span>
+            <span class="s0">contextName: contextName,</span>
+            <span class="s0">registry: registry,</span>
+            <span class="s0">defined: defined,</span>
+            <span class="s0">urlFetched: urlFetched,</span>
+            <span class="s0">defQueue: defQueue,</span>
+            <span class="s0">defQueueMap: {},</span>
+            <span class="s0">Module: Module,</span>
+            <span class="s0">makeModuleMap: makeModuleMap,</span>
+            <span class="s0">nextTick: req.nextTick,</span>
+            <span class="s0">onError: onError,</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Set a configuration for the context.</span>
+             <span class="s0">* @param {Object} cfg config object to integrate.</span>
+             <span class="s0">*/</span>
+            <span class="s0">configure: function (cfg) {</span>
+                <span class="s0">//Make sure the baseUrl ends in a slash.</span>
+                <span class="s0">if (cfg.baseUrl) {</span>
+                    <span class="s0">if (cfg.baseUrl.charAt(cfg.baseUrl.length - 1) !== '/') {</span>
+                        <span class="s0">cfg.baseUrl += '/';</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+
+                <span class="s0">// Convert old style urlArgs string to a function.</span>
+                <span class="s0">if (typeof cfg.urlArgs === 'string') {</span>
+                    <span class="s0">var urlArgs = cfg.urlArgs;</span>
+                    <span class="s0">cfg.urlArgs = function(id, url) {</span>
+                        <span class="s0">return (url.indexOf('?') === -1 ? '?' : '&amp;') + urlArgs;</span>
+                    <span class="s0">};</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Save off the paths since they require special processing,</span>
+                <span class="s0">//they are additive.</span>
+                <span class="s0">var shim = config.shim,</span>
+                    <span class="s0">objs = {</span>
+                        <span class="s0">paths: true,</span>
+                        <span class="s0">bundles: true,</span>
+                        <span class="s0">config: true,</span>
+                        <span class="s0">map: true</span>
+                    <span class="s0">};</span>
+
+                <span class="s0">eachProp(cfg, function (value, prop) {</span>
+                    <span class="s0">if (objs[prop]) {</span>
+                        <span class="s0">if (!config[prop]) {</span>
+                            <span class="s0">config[prop] = {};</span>
+                        <span class="s0">}</span>
+                        <span class="s0">mixin(config[prop], value, true, true);</span>
+                    <span class="s0">} else {</span>
+                        <span class="s0">config[prop] = value;</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+
+                <span class="s0">//Reverse map the bundles</span>
+                <span class="s0">if (cfg.bundles) {</span>
+                    <span class="s0">eachProp(cfg.bundles, function (value, prop) {</span>
+                        <span class="s0">each(value, function (v) {</span>
+                            <span class="s0">if (v !== prop) {</span>
+                                <span class="s0">bundlesMap[v] = prop;</span>
+                            <span class="s0">}</span>
+                        <span class="s0">});</span>
+                    <span class="s0">});</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Merge shim</span>
+                <span class="s0">if (cfg.shim) {</span>
+                    <span class="s0">eachProp(cfg.shim, function (value, id) {</span>
+                        <span class="s0">//Normalize the structure</span>
+                        <span class="s0">if (isArray(value)) {</span>
+                            <span class="s0">value = {</span>
+                                <span class="s0">deps: value</span>
+                            <span class="s0">};</span>
+                        <span class="s0">}</span>
+                        <span class="s0">if ((value.exports || value.init) &amp;&amp; !value.exportsFn) {</span>
+                            <span class="s0">value.exportsFn = context.makeShimExports(value);</span>
+                        <span class="s0">}</span>
+                        <span class="s0">shim[id] = value;</span>
+                    <span class="s0">});</span>
+                    <span class="s0">config.shim = shim;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Adjust packages if necessary.</span>
+                <span class="s0">if (cfg.packages) {</span>
+                    <span class="s0">each(cfg.packages, function (pkgObj) {</span>
+                        <span class="s0">var location, name;</span>
+
+                        <span class="s0">pkgObj = typeof pkgObj === 'string' ? {name: pkgObj} : pkgObj;</span>
+
+                        <span class="s0">name = pkgObj.name;</span>
+                        <span class="s0">location = pkgObj.location;</span>
+                        <span class="s0">if (location) {</span>
+                            <span class="s0">config.paths[name] = pkgObj.location;</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Save pointer to main module ID for pkg name.</span>
+                        <span class="s0">//Remove leading dot in main, so main paths are normalized,</span>
+                        <span class="s0">//and remove any trailing .js, since different package</span>
+                        <span class="s0">//envs have different conventions: some use a module name,</span>
+                        <span class="s0">//some use a file name.</span>
+                        <span class="s0">config.pkgs[name] = pkgObj.name + '/' + (pkgObj.main || 'main')</span>
+                                     <span class="s0">.replace(currDirRegExp, '')</span>
+                                     <span class="s0">.replace(jsSuffixRegExp, '');</span>
+                    <span class="s0">});</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//If there are any &quot;waiting to execute&quot; modules in the registry,</span>
+                <span class="s0">//update the maps for them, since their info, like URLs to load,</span>
+                <span class="s0">//may have changed.</span>
+                <span class="s0">eachProp(registry, function (mod, id) {</span>
+                    <span class="s0">//If module already has init called, since it is too</span>
+                    <span class="s0">//late to modify them, and ignore unnormalized ones</span>
+                    <span class="s0">//since they are transient.</span>
+                    <span class="s0">if (!mod.inited &amp;&amp; !mod.map.unnormalized) {</span>
+                        <span class="s0">mod.map = makeModuleMap(id, null, true);</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+
+                <span class="s0">//If a deps array or a config callback is specified, then call</span>
+                <span class="s0">//require with those args. This is useful when require is defined as a</span>
+                <span class="s0">//config object before require.js is loaded.</span>
+                <span class="s0">if (cfg.deps || cfg.callback) {</span>
+                    <span class="s0">context.require(cfg.deps || [], cfg.callback);</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">makeShimExports: function (value) {</span>
+                <span class="s0">function fn() {</span>
+                    <span class="s0">var ret;</span>
+                    <span class="s0">if (value.init) {</span>
+                        <span class="s0">ret = value.init.apply(global, arguments);</span>
+                    <span class="s0">}</span>
+                    <span class="s0">return ret || (value.exports &amp;&amp; getGlobal(value.exports));</span>
+                <span class="s0">}</span>
+                <span class="s0">return fn;</span>
+            <span class="s0">},</span>
+
+            <span class="s0">makeRequire: function (relMap, options) {</span>
+                <span class="s0">options = options || {};</span>
+
+                <span class="s0">function localRequire(deps, callback, errback) {</span>
+                    <span class="s0">var id, map, requireMod;</span>
+
+                    <span class="s0">if (options.enableBuildCallback &amp;&amp; callback &amp;&amp; isFunction(callback)) {</span>
+                        <span class="s0">callback.__requireJsBuild = true;</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">if (typeof deps === 'string') {</span>
+                        <span class="s0">if (isFunction(callback)) {</span>
+                            <span class="s0">//Invalid call</span>
+                            <span class="s0">return onError(makeError('requireargs', 'Invalid require call'), errback);</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//If require|exports|module are requested, get the</span>
+                        <span class="s0">//value for them from the special handlers. Caveat:</span>
+                        <span class="s0">//this only works while module is being defined.</span>
+                        <span class="s0">if (relMap &amp;&amp; hasProp(handlers, deps)) {</span>
+                            <span class="s0">return handlers[deps](registry[relMap.id]);</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Synchronous access to one module. If require.get is</span>
+                        <span class="s0">//available (as in the Node adapter), prefer that.</span>
+                        <span class="s0">if (req.get) {</span>
+                            <span class="s0">return req.get(context, deps, relMap, localRequire);</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">//Normalize module name, if it contains . or ..</span>
+                        <span class="s0">map = makeModuleMap(deps, relMap, false, true);</span>
+                        <span class="s0">id = map.id;</span>
+
+                        <span class="s0">if (!hasProp(defined, id)) {</span>
+                            <span class="s0">return onError(makeError('notloaded', 'Module name &quot;' +</span>
+                                        <span class="s0">id +</span>
+                                        <span class="s0">'&quot; has not been loaded yet for context: ' +</span>
+                                        <span class="s0">contextName +</span>
+                                        <span class="s0">(relMap ? '' : '. Use require([])')));</span>
+                        <span class="s0">}</span>
+                        <span class="s0">return defined[id];</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">//Grab defines waiting in the global queue.</span>
+                    <span class="s0">intakeDefines();</span>
+
+                    <span class="s0">//Mark all the dependencies as needing to be loaded.</span>
+                    <span class="s0">context.nextTick(function () {</span>
+                        <span class="s0">//Some defines could have been added since the</span>
+                        <span class="s0">//require call, collect them.</span>
+                        <span class="s0">intakeDefines();</span>
+
+                        <span class="s0">requireMod = getModule(makeModuleMap(null, relMap));</span>
+
+                        <span class="s0">//Store if map config should be applied to this require</span>
+                        <span class="s0">//call for dependencies.</span>
+                        <span class="s0">requireMod.skipMap = options.skipMap;</span>
+
+                        <span class="s0">requireMod.init(deps, callback, errback, {</span>
+                            <span class="s0">enabled: true</span>
+                        <span class="s0">});</span>
+
+                        <span class="s0">checkLoaded();</span>
+                    <span class="s0">});</span>
+
+                    <span class="s0">return localRequire;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">mixin(localRequire, {</span>
+                    <span class="s0">isBrowser: isBrowser,</span>
+
+                    <span class="s0">/**</span>
+                     <span class="s0">* Converts a module name + .extension into an URL path.</span>
+                     <span class="s0">* *Requires* the use of a module name. It does not support using</span>
+                     <span class="s0">* plain URLs like nameToUrl.</span>
+                     <span class="s0">*/</span>
+                    <span class="s0">toUrl: function (moduleNamePlusExt) {</span>
+                        <span class="s0">var ext,</span>
+                            <span class="s0">index = moduleNamePlusExt.lastIndexOf('.'),</span>
+                            <span class="s0">segment = moduleNamePlusExt.split('/')[0],</span>
+                            <span class="s0">isRelative = segment === '.' || segment === '..';</span>
+
+                        <span class="s0">//Have a file extension alias, and it is not the</span>
+                        <span class="s0">//dots from a relative path.</span>
+                        <span class="s0">if (index !== -1 &amp;&amp; (!isRelative || index &gt; 1)) {</span>
+                            <span class="s0">ext = moduleNamePlusExt.substring(index, moduleNamePlusExt.length);</span>
+                            <span class="s0">moduleNamePlusExt = moduleNamePlusExt.substring(0, index);</span>
+                        <span class="s0">}</span>
+
+                        <span class="s0">return context.nameToUrl(normalize(moduleNamePlusExt,</span>
+                                                <span class="s0">relMap &amp;&amp; relMap.id, true), ext,  true);</span>
+                    <span class="s0">},</span>
+
+                    <span class="s0">defined: function (id) {</span>
+                        <span class="s0">return hasProp(defined, makeModuleMap(id, relMap, false, true).id);</span>
+                    <span class="s0">},</span>
+
+                    <span class="s0">specified: function (id) {</span>
+                        <span class="s0">id = makeModuleMap(id, relMap, false, true).id;</span>
+                        <span class="s0">return hasProp(defined, id) || hasProp(registry, id);</span>
+                    <span class="s0">}</span>
+                <span class="s0">});</span>
+
+                <span class="s0">//Only allow undef on top level require calls</span>
+                <span class="s0">if (!relMap) {</span>
+                    <span class="s0">localRequire.undef = function (id) {</span>
+                        <span class="s0">//Bind any waiting define() calls to this context,</span>
+                        <span class="s0">//fix for #408</span>
+                        <span class="s0">takeGlobalQueue();</span>
+
+                        <span class="s0">var map = makeModuleMap(id, relMap, true),</span>
+                            <span class="s0">mod = getOwn(registry, id);</span>
+
+                        <span class="s0">mod.undefed = true;</span>
+                        <span class="s0">removeScript(id);</span>
+
+                        <span class="s0">delete defined[id];</span>
+                        <span class="s0">delete urlFetched[map.url];</span>
+                        <span class="s0">delete undefEvents[id];</span>
+
+                        <span class="s0">//Clean queued defines too. Go backwards</span>
+                        <span class="s0">//in array so that the splices do not</span>
+                        <span class="s0">//mess up the iteration.</span>
+                        <span class="s0">eachReverse(defQueue, function(args, i) {</span>
+                            <span class="s0">if (args[0] === id) {</span>
+                                <span class="s0">defQueue.splice(i, 1);</span>
+                            <span class="s0">}</span>
+                        <span class="s0">});</span>
+                        <span class="s0">delete context.defQueueMap[id];</span>
+
+                        <span class="s0">if (mod) {</span>
+                            <span class="s0">//Hold on to listeners in case the</span>
+                            <span class="s0">//module will be attempted to be reloaded</span>
+                            <span class="s0">//using a different config.</span>
+                            <span class="s0">if (mod.events.defined) {</span>
+                                <span class="s0">undefEvents[id] = mod.events;</span>
+                            <span class="s0">}</span>
+
+                            <span class="s0">cleanRegistry(id);</span>
+                        <span class="s0">}</span>
+                    <span class="s0">};</span>
+                <span class="s0">}</span>
+
+                <span class="s0">return localRequire;</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Called to enable a module if it is still in the registry</span>
+             <span class="s0">* awaiting enablement. A second arg, parent, the parent module,</span>
+             <span class="s0">* is passed in for context, when this method is overridden by</span>
+             <span class="s0">* the optimizer. Not shown here to keep code compact.</span>
+             <span class="s0">*/</span>
+            <span class="s0">enable: function (depMap) {</span>
+                <span class="s0">var mod = getOwn(registry, depMap.id);</span>
+                <span class="s0">if (mod) {</span>
+                    <span class="s0">getModule(depMap).enable();</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Internal method used by environment adapters to complete a load event.</span>
+             <span class="s0">* A load event could be a script load or just a load pass from a synchronous</span>
+             <span class="s0">* load call.</span>
+             <span class="s0">* @param {String} moduleName the name of the module to potentially complete.</span>
+             <span class="s0">*/</span>
+            <span class="s0">completeLoad: function (moduleName) {</span>
+                <span class="s0">var found, args, mod,</span>
+                    <span class="s0">shim = getOwn(config.shim, moduleName) || {},</span>
+                    <span class="s0">shExports = shim.exports;</span>
+
+                <span class="s0">takeGlobalQueue();</span>
+
+                <span class="s0">while (defQueue.length) {</span>
+                    <span class="s0">args = defQueue.shift();</span>
+                    <span class="s0">if (args[0] === null) {</span>
+                        <span class="s0">args[0] = moduleName;</span>
+                        <span class="s0">//If already found an anonymous module and bound it</span>
+                        <span class="s0">//to this name, then this is some other anon module</span>
+                        <span class="s0">//waiting for its completeLoad to fire.</span>
+                        <span class="s0">if (found) {</span>
+                            <span class="s0">break;</span>
+                        <span class="s0">}</span>
+                        <span class="s0">found = true;</span>
+                    <span class="s0">} else if (args[0] === moduleName) {</span>
+                        <span class="s0">//Found matching define call for this script!</span>
+                        <span class="s0">found = true;</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">callGetModule(args);</span>
+                <span class="s0">}</span>
+                <span class="s0">context.defQueueMap = {};</span>
+
+                <span class="s0">//Do this after the cycle of callGetModule in case the result</span>
+                <span class="s0">//of those calls/init calls changes the registry.</span>
+                <span class="s0">mod = getOwn(registry, moduleName);</span>
+
+                <span class="s0">if (!found &amp;&amp; !hasProp(defined, moduleName) &amp;&amp; mod &amp;&amp; !mod.inited) {</span>
+                    <span class="s0">if (config.enforceDefine &amp;&amp; (!shExports || !getGlobal(shExports))) {</span>
+                        <span class="s0">if (hasPathFallback(moduleName)) {</span>
+                            <span class="s0">return;</span>
+                        <span class="s0">} else {</span>
+                            <span class="s0">return onError(makeError('nodefine',</span>
+                                             <span class="s0">'No define call for ' + moduleName,</span>
+                                             <span class="s0">null,</span>
+                                             <span class="s0">[moduleName]));</span>
+                        <span class="s0">}</span>
+                    <span class="s0">} else {</span>
+                        <span class="s0">//A script that does not call define(), so just simulate</span>
+                        <span class="s0">//the call for it.</span>
+                        <span class="s0">callGetModule([moduleName, (shim.deps || []), shim.exportsFn]);</span>
+                    <span class="s0">}</span>
+                <span class="s0">}</span>
+
+                <span class="s0">checkLoaded();</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Converts a module name to a file path. Supports cases where</span>
+             <span class="s0">* moduleName may actually be just an URL.</span>
+             <span class="s0">* Note that it **does not** call normalize on the moduleName,</span>
+             <span class="s0">* it is assumed to have already been normalized. This is an</span>
+             <span class="s0">* internal API, not a public one. Use toUrl for the public API.</span>
+             <span class="s0">*/</span>
+            <span class="s0">nameToUrl: function (moduleName, ext, skipExt) {</span>
+                <span class="s0">var paths, syms, i, parentModule, url,</span>
+                    <span class="s0">parentPath, bundleId,</span>
+                    <span class="s0">pkgMain = getOwn(config.pkgs, moduleName);</span>
+
+                <span class="s0">if (pkgMain) {</span>
+                    <span class="s0">moduleName = pkgMain;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">bundleId = getOwn(bundlesMap, moduleName);</span>
+
+                <span class="s0">if (bundleId) {</span>
+                    <span class="s0">return context.nameToUrl(bundleId, ext, skipExt);</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//If a colon is in the URL, it indicates a protocol is used and it is just</span>
+                <span class="s0">//an URL to a file, or if it starts with a slash, contains a query arg (i.e. ?)</span>
+                <span class="s0">//or ends with .js, then assume the user meant to use an url and not a module id.</span>
+                <span class="s0">//The slash is important for protocol-less URLs as well as full paths.</span>
+                <span class="s0">if (req.jsExtRegExp.test(moduleName)) {</span>
+                    <span class="s0">//Just a plain path, not module name lookup, so just return it.</span>
+                    <span class="s0">//Add extension if it is included. This is a bit wonky, only non-.js things pass</span>
+                    <span class="s0">//an extension, this method probably needs to be reworked.</span>
+                    <span class="s0">url = moduleName + (ext || '');</span>
+                <span class="s0">} else {</span>
+                    <span class="s0">//A module that needs to be converted to a path.</span>
+                    <span class="s0">paths = config.paths;</span>
+
+                    <span class="s0">syms = moduleName.split('/');</span>
+                    <span class="s0">//For each module name segment, see if there is a path</span>
+                    <span class="s0">//registered for it. Start with most specific name</span>
+                    <span class="s0">//and work up from it.</span>
+                    <span class="s0">for (i = syms.length; i &gt; 0; i -= 1) {</span>
+                        <span class="s0">parentModule = syms.slice(0, i).join('/');</span>
+
+                        <span class="s0">parentPath = getOwn(paths, parentModule);</span>
+                        <span class="s0">if (parentPath) {</span>
+                            <span class="s0">//If an array, it means there are a few choices,</span>
+                            <span class="s0">//Choose the one that is desired</span>
+                            <span class="s0">if (isArray(parentPath)) {</span>
+                                <span class="s0">parentPath = parentPath[0];</span>
+                            <span class="s0">}</span>
+                            <span class="s0">syms.splice(0, i, parentPath);</span>
+                            <span class="s0">break;</span>
+                        <span class="s0">}</span>
+                    <span class="s0">}</span>
+
+                    <span class="s0">//Join the path parts together, then figure out if baseUrl is needed.</span>
+                    <span class="s0">url = syms.join('/');</span>
+                    <span class="s0">url += (ext || (/^data\:|^blob\:|\?/.test(url) || skipExt ? '' : '.js'));</span>
+                    <span class="s0">url = (url.charAt(0) === '/' || url.match(/^[\w\+\.\-]+:/) ? '' : config.baseUrl) + url;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">return config.urlArgs &amp;&amp; !/^blob\:/.test(url) ?</span>
+                       <span class="s0">url + config.urlArgs(moduleName, url) : url;</span>
+            <span class="s0">},</span>
+
+            <span class="s0">//Delegates to req.load. Broken out as a separate function to</span>
+            <span class="s0">//allow overriding in the optimizer.</span>
+            <span class="s0">load: function (id, url) {</span>
+                <span class="s0">req.load(context, id, url);</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Executes a module callback function. Broken out as a separate function</span>
+             <span class="s0">* solely to allow the build system to sequence the files in the built</span>
+             <span class="s0">* layer in the right sequence.</span>
+             <span class="s0">*</span>
+             <span class="s0">* @private</span>
+             <span class="s0">*/</span>
+            <span class="s0">execCb: function (name, callback, args, exports) {</span>
+                <span class="s0">return callback.apply(exports, args);</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* callback for script loads, used to check status of loading.</span>
+             <span class="s0">*</span>
+             <span class="s0">* @param {Event} evt the event from the browser for the script</span>
+             <span class="s0">* that was loaded.</span>
+             <span class="s0">*/</span>
+            <span class="s0">onScriptLoad: function (evt) {</span>
+                <span class="s0">//Using currentTarget instead of target for Firefox 2.0's sake. Not</span>
+                <span class="s0">//all old browsers will be supported, but this one was easy enough</span>
+                <span class="s0">//to support and still makes sense.</span>
+                <span class="s0">if (evt.type === 'load' ||</span>
+                        <span class="s0">(readyRegExp.test((evt.currentTarget || evt.srcElement).readyState))) {</span>
+                    <span class="s0">//Reset interactive script so a script node is not held onto for</span>
+                    <span class="s0">//to long.</span>
+                    <span class="s0">interactiveScript = null;</span>
+
+                    <span class="s0">//Pull out the name of the module and the context.</span>
+                    <span class="s0">var data = getScriptData(evt);</span>
+                    <span class="s0">context.completeLoad(data.id);</span>
+                <span class="s0">}</span>
+            <span class="s0">},</span>
+
+            <span class="s0">/**</span>
+             <span class="s0">* Callback for script errors.</span>
+             <span class="s0">*/</span>
+            <span class="s0">onScriptError: function (evt) {</span>
+                <span class="s0">var data = getScriptData(evt);</span>
+                <span class="s0">if (!hasPathFallback(data.id)) {</span>
+                    <span class="s0">var parents = [];</span>
+                    <span class="s0">eachProp(registry, function(value, key) {</span>
+                        <span class="s0">if (key.indexOf('_@r') !== 0) {</span>
+                            <span class="s0">each(value.depMaps, function(depMap) {</span>
+                                <span class="s0">if (depMap.id === data.id) {</span>
+                                    <span class="s0">parents.push(key);</span>
+                                    <span class="s0">return true;</span>
+                                <span class="s0">}</span>
+                            <span class="s0">});</span>
+                        <span class="s0">}</span>
+                    <span class="s0">});</span>
+                    <span class="s0">return onError(makeError('scripterror', 'Script error for &quot;' + data.id +</span>
+                                             <span class="s0">(parents.length ?</span>
+                                             <span class="s0">'&quot;, needed by: ' + parents.join(', ') :</span>
+                                             <span class="s0">'&quot;'), evt, [data.id]));</span>
+                <span class="s0">}</span>
+            <span class="s0">}</span>
+        <span class="s0">};</span>
+
+        <span class="s0">context.require = context.makeRequire();</span>
+        <span class="s0">return context;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Main entry point.</span>
+     <span class="s0">*</span>
+     <span class="s0">* If the only argument to require is a string, then the module that</span>
+     <span class="s0">* is represented by that string is fetched for the appropriate context.</span>
+     <span class="s0">*</span>
+     <span class="s0">* If the first argument is an array, then it will be treated as an array</span>
+     <span class="s0">* of dependency string names to fetch. An optional function callback can</span>
+     <span class="s0">* be specified to execute when all of those dependencies are available.</span>
+     <span class="s0">*</span>
+     <span class="s0">* Make a local req variable to help Caja compliance (it assumes things</span>
+     <span class="s0">* on a require that are not standardized), and to give a short</span>
+     <span class="s0">* name for minification/local scope use.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req = requirejs = function (deps, callback, errback, optional) {</span>
+
+        <span class="s0">//Find the right context, use default</span>
+        <span class="s0">var context, config,</span>
+            <span class="s0">contextName = defContextName;</span>
+
+        <span class="s0">// Determine if have config object in the call.</span>
+        <span class="s0">if (!isArray(deps) &amp;&amp; typeof deps !== 'string') {</span>
+            <span class="s0">// deps is a config object</span>
+            <span class="s0">config = deps;</span>
+            <span class="s0">if (isArray(callback)) {</span>
+                <span class="s0">// Adjust args if there are dependencies</span>
+                <span class="s0">deps = callback;</span>
+                <span class="s0">callback = errback;</span>
+                <span class="s0">errback = optional;</span>
+            <span class="s0">} else {</span>
+                <span class="s0">deps = [];</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">if (config &amp;&amp; config.context) {</span>
+            <span class="s0">contextName = config.context;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">context = getOwn(contexts, contextName);</span>
+        <span class="s0">if (!context) {</span>
+            <span class="s0">context = contexts[contextName] = req.s.newContext(contextName);</span>
+        <span class="s0">}</span>
+
+        <span class="s0">if (config) {</span>
+            <span class="s0">context.configure(config);</span>
+        <span class="s0">}</span>
+
+        <span class="s0">return context.require(deps, callback, errback);</span>
+    <span class="s0">};</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Support require.config() to make it easier to cooperate with other</span>
+     <span class="s0">* AMD loaders on globally agreed names.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.config = function (config) {</span>
+        <span class="s0">return req(config);</span>
+    <span class="s0">};</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Execute something after the current tick</span>
+     <span class="s0">* of the event loop. Override for other envs</span>
+     <span class="s0">* that have a better solution than setTimeout.</span>
+     <span class="s0">* @param  {Function} fn function to execute later.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.nextTick = typeof setTimeout !== 'undefined' ? function (fn) {</span>
+        <span class="s0">setTimeout(fn, 4);</span>
+    <span class="s0">} : function (fn) { fn(); };</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Export require as a global, but only if it does not already exist.</span>
+     <span class="s0">*/</span>
+    <span class="s0">if (!require) {</span>
+        <span class="s0">require = req;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">req.version = version;</span>
+
+    <span class="s0">//Used to filter out dependencies that are already paths.</span>
+    <span class="s0">req.jsExtRegExp = /^\/|:|\?|\.js$/;</span>
+    <span class="s0">req.isBrowser = isBrowser;</span>
+    <span class="s0">s = req.s = {</span>
+        <span class="s0">contexts: contexts,</span>
+        <span class="s0">newContext: newContext</span>
+    <span class="s0">};</span>
+
+    <span class="s0">//Create default context.</span>
+    <span class="s0">req({});</span>
+
+    <span class="s0">//Exports some context-sensitive methods on global require.</span>
+    <span class="s0">each([</span>
+        <span class="s0">'toUrl',</span>
+        <span class="s0">'undef',</span>
+        <span class="s0">'defined',</span>
+        <span class="s0">'specified'</span>
+    <span class="s0">], function (prop) {</span>
+        <span class="s0">//Reference from contexts instead of early binding to default context,</span>
+        <span class="s0">//so that during builds, the latest instance of the default context</span>
+        <span class="s0">//with its config gets used.</span>
+        <span class="s0">req[prop] = function () {</span>
+            <span class="s0">var ctx = contexts[defContextName];</span>
+            <span class="s0">return ctx.require[prop].apply(ctx, arguments);</span>
+        <span class="s0">};</span>
+    <span class="s0">});</span>
+
+    <span class="s0">if (isBrowser) {</span>
+        <span class="s0">head = s.head = document.getElementsByTagName('head')[0];</span>
+        <span class="s0">//If BASE tag is in play, using appendChild is a problem for IE6.</span>
+        <span class="s0">//When that browser dies, this can be removed. Details in this jQuery bug:</span>
+        <span class="s0">//http://dev.jquery.com/ticket/2709</span>
+        <span class="s0">baseElement = document.getElementsByTagName('base')[0];</span>
+        <span class="s0">if (baseElement) {</span>
+            <span class="s0">head = s.head = baseElement.parentNode;</span>
+        <span class="s0">}</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Any errors that require explicitly generates will be passed to this</span>
+     <span class="s0">* function. Intercept/override it if you want custom error handling.</span>
+     <span class="s0">* @param {Error} err the error object.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.onError = defaultOnError;</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Creates the node for the load command. Only used in browser envs.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.createNode = function (config, moduleName, url) {</span>
+        <span class="s0">var node = config.xhtml ?</span>
+                <span class="s0">document.createElementNS('http://www.w3.org/1999/xhtml', 'html:script') :</span>
+                <span class="s0">document.createElement('script');</span>
+        <span class="s0">node.type = config.scriptType || 'text/javascript';</span>
+        <span class="s0">node.charset = 'utf-8';</span>
+        <span class="s0">node.async = true;</span>
+        <span class="s0">return node;</span>
+    <span class="s0">};</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Does the request to load a module for the browser case.</span>
+     <span class="s0">* Make this a separate function to allow other environments</span>
+     <span class="s0">* to override it.</span>
+     <span class="s0">*</span>
+     <span class="s0">* @param {Object} context the require context to find state.</span>
+     <span class="s0">* @param {String} moduleName the name of the module.</span>
+     <span class="s0">* @param {Object} url the URL to the module.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.load = function (context, moduleName, url) {</span>
+        <span class="s0">var config = (context &amp;&amp; context.config) || {},</span>
+            <span class="s0">node;</span>
+        <span class="s0">if (isBrowser) {</span>
+            <span class="s0">//In the browser so use a script tag</span>
+            <span class="s0">node = req.createNode(config, moduleName, url);</span>
+
+            <span class="s0">node.setAttribute('data-requirecontext', context.contextName);</span>
+            <span class="s0">node.setAttribute('data-requiremodule', moduleName);</span>
+
+            <span class="s0">//Set up load listener. Test attachEvent first because IE9 has</span>
+            <span class="s0">//a subtle issue in its addEventListener and script onload firings</span>
+            <span class="s0">//that do not match the behavior of all other browsers with</span>
+            <span class="s0">//addEventListener support, which fire the onload event for a</span>
+            <span class="s0">//script right after the script execution. See:</span>
+            <span class="s0">//https://connect.microsoft.com/IE/feedback/details/648057/script-onload-event-is-not-fired-immediately-after-script-execution</span>
+            <span class="s0">//UNFORTUNATELY Opera implements attachEvent but does not follow the script</span>
+            <span class="s0">//script execution mode.</span>
+            <span class="s0">if (node.attachEvent &amp;&amp;</span>
+                    <span class="s0">//Check if node.attachEvent is artificially added by custom script or</span>
+                    <span class="s0">//natively supported by browser</span>
+                    <span class="s0">//read https://github.com/requirejs/requirejs/issues/187</span>
+                    <span class="s0">//if we can NOT find [native code] then it must NOT natively supported.</span>
+                    <span class="s0">//in IE8, node.attachEvent does not have toString()</span>
+                    <span class="s0">//Note the test for &quot;[native code&quot; with no closing brace, see:</span>
+                    <span class="s0">//https://github.com/requirejs/requirejs/issues/273</span>
+                    <span class="s0">!(node.attachEvent.toString &amp;&amp; node.attachEvent.toString().indexOf('[native code') &lt; 0) &amp;&amp;</span>
+                    <span class="s0">!isOpera) {</span>
+                <span class="s0">//Probably IE. IE (at least 6-8) do not fire</span>
+                <span class="s0">//script onload right after executing the script, so</span>
+                <span class="s0">//we cannot tie the anonymous define call to a name.</span>
+                <span class="s0">//However, IE reports the script as being in 'interactive'</span>
+                <span class="s0">//readyState at the time of the define call.</span>
+                <span class="s0">useInteractive = true;</span>
+
+                <span class="s0">node.attachEvent('onreadystatechange', context.onScriptLoad);</span>
+                <span class="s0">//It would be great to add an error handler here to catch</span>
+                <span class="s0">//404s in IE9+. However, onreadystatechange will fire before</span>
+                <span class="s0">//the error handler, so that does not help. If addEventListener</span>
+                <span class="s0">//is used, then IE will fire error before load, but we cannot</span>
+                <span class="s0">//use that pathway given the connect.microsoft.com issue</span>
+                <span class="s0">//mentioned above about not doing the 'script execute,</span>
+                <span class="s0">//then fire the script load event listener before execute</span>
+                <span class="s0">//next script' that other browsers do.</span>
+                <span class="s0">//Best hope: IE10 fixes the issues,</span>
+                <span class="s0">//and then destroys all installs of IE 6-9.</span>
+                <span class="s0">//node.attachEvent('onerror', context.onScriptError);</span>
+            <span class="s0">} else {</span>
+                <span class="s0">node.addEventListener('load', context.onScriptLoad, false);</span>
+                <span class="s0">node.addEventListener('error', context.onScriptError, false);</span>
+            <span class="s0">}</span>
+            <span class="s0">node.src = url;</span>
+
+            <span class="s0">//Calling onNodeCreated after all properties on the node have been</span>
+            <span class="s0">//set, but before it is placed in the DOM.</span>
+            <span class="s0">if (config.onNodeCreated) {</span>
+                <span class="s0">config.onNodeCreated(node, config, moduleName, url);</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//For some cache cases in IE 6-8, the script executes before the end</span>
+            <span class="s0">//of the appendChild execution, so to tie an anonymous define</span>
+            <span class="s0">//call to the module name (which is stored on the node), hold on</span>
+            <span class="s0">//to a reference to this node, but clear after the DOM insertion.</span>
+            <span class="s0">currentlyAddingScript = node;</span>
+            <span class="s0">if (baseElement) {</span>
+                <span class="s0">head.insertBefore(node, baseElement);</span>
+            <span class="s0">} else {</span>
+                <span class="s0">head.appendChild(node);</span>
+            <span class="s0">}</span>
+            <span class="s0">currentlyAddingScript = null;</span>
+
+            <span class="s0">return node;</span>
+        <span class="s0">} else if (isWebWorker) {</span>
+            <span class="s0">try {</span>
+                <span class="s0">//In a web worker, use importScripts. This is not a very</span>
+                <span class="s0">//efficient use of importScripts, importScripts will block until</span>
+                <span class="s0">//its script is downloaded and evaluated. However, if web workers</span>
+                <span class="s0">//are in play, the expectation is that a build has been done so</span>
+                <span class="s0">//that only one script needs to be loaded anyway. This may need</span>
+                <span class="s0">//to be reevaluated if other use cases become common.</span>
+
+                <span class="s0">// Post a task to the event loop to work around a bug in WebKit</span>
+                <span class="s0">// where the worker gets garbage-collected after calling</span>
+                <span class="s0">// importScripts(): https://webkit.org/b/153317</span>
+                <span class="s0">setTimeout(function() {}, 0);</span>
+                <span class="s0">importScripts(url);</span>
+
+                <span class="s0">//Account for anonymous modules</span>
+                <span class="s0">context.completeLoad(moduleName);</span>
+            <span class="s0">} catch (e) {</span>
+                <span class="s0">context.onError(makeError('importscripts',</span>
+                                <span class="s0">'importScripts failed for ' +</span>
+                                    <span class="s0">moduleName + ' at ' + url,</span>
+                                <span class="s0">e,</span>
+                                <span class="s0">[moduleName]));</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+    <span class="s0">};</span>
+
+    <span class="s0">function getInteractiveScript() {</span>
+        <span class="s0">if (interactiveScript &amp;&amp; interactiveScript.readyState === 'interactive') {</span>
+            <span class="s0">return interactiveScript;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">eachReverse(scripts(), function (script) {</span>
+            <span class="s0">if (script.readyState === 'interactive') {</span>
+                <span class="s0">return (interactiveScript = script);</span>
+            <span class="s0">}</span>
+        <span class="s0">});</span>
+        <span class="s0">return interactiveScript;</span>
+    <span class="s0">}</span>
+
+    <span class="s0">//Look for a data-main script attribute, which could also adjust the baseUrl.</span>
+    <span class="s0">if (isBrowser &amp;&amp; !cfg.skipDataMain) {</span>
+        <span class="s0">//Figure out baseUrl. Get it from the script tag with require.js in it.</span>
+        <span class="s0">eachReverse(scripts(), function (script) {</span>
+            <span class="s0">//Set the 'head' where we can append children by</span>
+            <span class="s0">//using the script's parent.</span>
+            <span class="s0">if (!head) {</span>
+                <span class="s0">head = script.parentNode;</span>
+            <span class="s0">}</span>
+
+            <span class="s0">//Look for a data-main attribute to set main script for the page</span>
+            <span class="s0">//to load. If it is there, the path to data main becomes the</span>
+            <span class="s0">//baseUrl, if it is not already set.</span>
+            <span class="s0">dataMain = script.getAttribute('data-main');</span>
+            <span class="s0">if (dataMain) {</span>
+                <span class="s0">//Preserve dataMain in case it is a path (i.e. contains '?')</span>
+                <span class="s0">mainScript = dataMain;</span>
+
+                <span class="s0">//Set final baseUrl if there is not already an explicit one,</span>
+                <span class="s0">//but only do so if the data-main value is not a loader plugin</span>
+                <span class="s0">//module ID.</span>
+                <span class="s0">if (!cfg.baseUrl &amp;&amp; mainScript.indexOf('!') === -1) {</span>
+                    <span class="s0">//Pull off the directory of data-main for use as the</span>
+                    <span class="s0">//baseUrl.</span>
+                    <span class="s0">src = mainScript.split('/');</span>
+                    <span class="s0">mainScript = src.pop();</span>
+                    <span class="s0">subPath = src.length ? src.join('/')  + '/' : './';</span>
+
+                    <span class="s0">cfg.baseUrl = subPath;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Strip off any trailing .js since mainScript is now</span>
+                <span class="s0">//like a module name.</span>
+                <span class="s0">mainScript = mainScript.replace(jsSuffixRegExp, '');</span>
+
+                <span class="s0">//If mainScript is still a path, fall back to dataMain</span>
+                <span class="s0">if (req.jsExtRegExp.test(mainScript)) {</span>
+                    <span class="s0">mainScript = dataMain;</span>
+                <span class="s0">}</span>
+
+                <span class="s0">//Put the data-main script in the files to load.</span>
+                <span class="s0">cfg.deps = cfg.deps ? cfg.deps.concat(mainScript) : [mainScript];</span>
+
+                <span class="s0">return true;</span>
+            <span class="s0">}</span>
+        <span class="s0">});</span>
+    <span class="s0">}</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* The function that handles definitions of modules. Differs from</span>
+     <span class="s0">* require() in that a string for the module should be the first argument,</span>
+     <span class="s0">* and the function to execute after dependencies are loaded should</span>
+     <span class="s0">* return a value to define the module corresponding to the first argument's</span>
+     <span class="s0">* name.</span>
+     <span class="s0">*/</span>
+    <span class="s0">define = function (name, deps, callback) {</span>
+        <span class="s0">var node, context;</span>
+
+        <span class="s0">//Allow for anonymous modules</span>
+        <span class="s0">if (typeof name !== 'string') {</span>
+            <span class="s0">//Adjust args appropriately</span>
+            <span class="s0">callback = deps;</span>
+            <span class="s0">deps = name;</span>
+            <span class="s0">name = null;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">//This module may not have dependencies</span>
+        <span class="s0">if (!isArray(deps)) {</span>
+            <span class="s0">callback = deps;</span>
+            <span class="s0">deps = null;</span>
+        <span class="s0">}</span>
+
+        <span class="s0">//If no name, and callback is a function, then figure out if it a</span>
+        <span class="s0">//CommonJS thing with dependencies.</span>
+        <span class="s0">if (!deps &amp;&amp; isFunction(callback)) {</span>
+            <span class="s0">deps = [];</span>
+            <span class="s0">//Remove comments from the callback string,</span>
+            <span class="s0">//look for require calls, and pull them into the dependencies,</span>
+            <span class="s0">//but only if there are function args.</span>
+            <span class="s0">if (callback.length) {</span>
+                <span class="s0">callback</span>
+                    <span class="s0">.toString()</span>
+                    <span class="s0">.replace(commentRegExp, commentReplace)</span>
+                    <span class="s0">.replace(cjsRequireRegExp, function (match, dep) {</span>
+                        <span class="s0">deps.push(dep);</span>
+                    <span class="s0">});</span>
+
+                <span class="s0">//May be a CommonJS thing even without require calls, but still</span>
+                <span class="s0">//could use exports, and module. Avoid doing exports and module</span>
+                <span class="s0">//work though if it just needs require.</span>
+                <span class="s0">//REQUIRES the function to expect the CommonJS variables in the</span>
+                <span class="s0">//order listed below.</span>
+                <span class="s0">deps = (callback.length === 1 ? ['require'] : ['require', 'exports', 'module']).concat(deps);</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">//If in IE 6-8 and hit an anonymous define() call, do the interactive</span>
+        <span class="s0">//work.</span>
+        <span class="s0">if (useInteractive) {</span>
+            <span class="s0">node = currentlyAddingScript || getInteractiveScript();</span>
+            <span class="s0">if (node) {</span>
+                <span class="s0">if (!name) {</span>
+                    <span class="s0">name = node.getAttribute('data-requiremodule');</span>
+                <span class="s0">}</span>
+                <span class="s0">context = contexts[node.getAttribute('data-requirecontext')];</span>
+            <span class="s0">}</span>
+        <span class="s0">}</span>
+
+        <span class="s0">//Always save off evaluating the def call until the script onload handler.</span>
+        <span class="s0">//This allows multiple modules to be in a file without prematurely</span>
+        <span class="s0">//tracing dependencies, and allows for anonymous module support,</span>
+        <span class="s0">//where the module name is not known until the script onload event</span>
+        <span class="s0">//occurs. If no context, use the global queue, and get it processed</span>
+        <span class="s0">//in the onscript load callback.</span>
+        <span class="s0">if (context) {</span>
+            <span class="s0">context.defQueue.push([name, deps, callback]);</span>
+            <span class="s0">context.defQueueMap[name] = true;</span>
+        <span class="s0">} else {</span>
+            <span class="s0">globalDefQueue.push([name, deps, callback]);</span>
+        <span class="s0">}</span>
+    <span class="s0">};</span>
+
+    <span class="s0">define.amd = {</span>
+        <span class="s0">jQuery: true</span>
+    <span class="s0">};</span>
+
+    <span class="s0">/**</span>
+     <span class="s0">* Executes the text. Normally just uses eval, but can be modified</span>
+     <span class="s0">* to use a better, environment-specific call. Only used for transpiling</span>
+     <span class="s0">* loader plugins, not for plain JS modules.</span>
+     <span class="s0">* @param {String} text the text to execute/evaluate.</span>
+     <span class="s0">*/</span>
+    <span class="s0">req.exec = function (text) {</span>
+        <span class="s0">/*jslint evil: true */</span>
+        <span class="s0">return eval(text);</span>
+    <span class="s0">};</span>
+
+    <span class="s0">//Set up with config info.</span>
+    <span class="s0">req(cfg);</span>
+<span class="s0">}(this, (typeof setTimeout === 'undefined' ? undefined : setTimeout)));</span>
+</pre>
+</body>
+</html>

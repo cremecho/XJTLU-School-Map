@@ -1,0 +1,197 @@
+<html>
+<head>
+<title>SearchPage.dart</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #080808;}
+.s1 { color: #067d17;}
+.s2 { color: #0033b3;}
+.s3 { color: #8c8c8c; font-style: italic;}
+.s4 { color: #1750eb;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+SearchPage.dart</font>
+</center></td></tr></table>
+<pre><span class="s0">import </span><span class="s1">'package:flutter/material.dart'</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">'sub1.dart'</span><span class="s0">;</span>
+
+<span class="s2">class </span><span class="s0">MyApp1 </span><span class="s2">extends </span><span class="s0">StatelessWidget {</span>
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+
+    <span class="s0">Widget child = SearchPage();</span>
+    <span class="s0">child = SubPage(child: child);</span>
+    <span class="s2">return </span><span class="s0">MaterialApp</span>
+      <span class="s0">(</span>
+         <span class="s0">home: child,</span>
+      <span class="s0">);</span>
+  <span class="s0">}</span>
+<span class="s0">}</span>
+
+<span class="s2">class </span><span class="s0">SearchPage </span><span class="s2">extends </span><span class="s0">StatefulWidget{</span>
+  <span class="s0">@override</span>
+  <span class="s0">_SearchPage createState() =&gt; _SearchPage();</span>
+<span class="s0">}</span>
+
+<span class="s2">class </span><span class="s0">_SearchPage </span><span class="s2">extends </span><span class="s0">State&lt;SearchPage&gt; {</span>
+
+
+
+  <span class="s0">@override</span>
+  <span class="s2">void </span><span class="s0">initState()</span>
+  <span class="s0">{</span>
+    <span class="s2">super</span><span class="s0">.initState();</span>
+
+  <span class="s0">}</span>
+
+
+  <span class="s0">@override</span>
+  <span class="s0">Widget build(BuildContext context) {</span>
+    <span class="s0">double width = MediaQuery.of(context).size.width;</span>
+    <span class="s0">double height = MediaQuery.of(context).size.height;</span>
+         <span class="s2">return </span><span class="s0">Scaffold(</span>
+                 <span class="s0">body:</span>
+                     <span class="s0">Center</span>
+                     <span class="s0">(</span>
+                       <span class="s0">child: Container(</span>
+                         <span class="s0">alignment: Alignment.center,</span>
+                         <span class="s0">color: Colors.white,</span>
+                         <span class="s0">child: Stack(</span>
+                           <span class="s0">children: &lt;Widget&gt;[</span>
+                         <span class="s3">// Max Size</span>
+
+                             <span class="s0">Container(</span>
+                               <span class="s0">margin: EdgeInsets.only(left: </span><span class="s4">0.36 </span><span class="s0">* width, top: </span><span class="s4">0</span><span class="s0">, right: </span><span class="s4">0</span><span class="s0">, bottom: </span><span class="s4">0</span><span class="s0">),</span>
+                               <span class="s0">height: double.infinity,</span>
+                               <span class="s0">width: double.infinity,</span>
+                               <span class="s0">decoration: BoxDecoration(</span>
+                                   <span class="s0">color: Colors.deepOrangeAccent[</span><span class="s4">100</span><span class="s0">],</span>
+                               <span class="s0">),</span>
+                             <span class="s0">),</span>
+
+                             <span class="s0">Container(</span>
+                               <span class="s0">margin: EdgeInsets.only(left: </span><span class="s4">0</span><span class="s0">, top: </span><span class="s4">0</span><span class="s0">, right: </span><span class="s4">0.36 </span><span class="s0">* width, bottom: </span><span class="s4">0</span><span class="s0">),</span>
+                               <span class="s0">height: double.infinity,</span>
+                               <span class="s0">width: double.infinity,</span>
+                               <span class="s0">decoration: BoxDecoration(</span>
+                                   <span class="s0">color: Colors.teal[</span><span class="s4">100</span><span class="s0">],</span>
+                               <span class="s0">)</span>
+                             <span class="s0">),</span>
+
+                             <span class="s0">Container(</span>
+                               <span class="s0">margin: EdgeInsets.only(left: </span><span class="s4">200</span><span class="s0">, top: </span><span class="s4">650</span><span class="s0">, right: </span><span class="s4">0</span><span class="s0">, bottom: </span><span class="s4">0</span><span class="s0">),</span>
+                               <span class="s0">child:</span>
+                               <span class="s0">Text(</span><span class="s1">'CLASSROOM'</span><span class="s0">,</span>
+                                 <span class="s0">style: TextStyle(</span>
+                                   <span class="s0">fontSize: </span><span class="s4">62</span><span class="s0">,</span>
+                                   <span class="s0">foreground: Paint()</span>
+                                     <span class="s0">..style = PaintingStyle.stroke</span>
+                                     <span class="s0">..strokeWidth = </span><span class="s4">6</span>
+                                     <span class="s0">..color = Colors.white54,</span>
+                                 <span class="s0">),</span>
+                               <span class="s0">),</span>
+                             <span class="s0">),</span>
+
+                             <span class="s0">Container(</span>
+                               <span class="s0">margin: EdgeInsets.only(left: </span><span class="s4">0</span><span class="s0">, top: </span><span class="s4">40</span><span class="s0">, right: </span><span class="s4">120</span><span class="s0">),</span>
+                               <span class="s0">child:</span>
+                               <span class="s0">Text(</span><span class="s1">'EQUIP MENT'</span><span class="s0">,</span>
+                                 <span class="s0">style: TextStyle(</span>
+                                   <span class="s0">fontSize: </span><span class="s4">70</span><span class="s0">,</span>
+                                   <span class="s0">foreground: Paint()</span>
+                                     <span class="s0">..style = PaintingStyle.stroke</span>
+                                     <span class="s0">..strokeWidth = </span><span class="s4">6</span>
+                                     <span class="s0">..color = Colors.white54,</span>
+                                 <span class="s0">),</span>
+                               <span class="s0">),</span>
+                             <span class="s0">),</span>
+                             <span class="s3">/* 
+                             ClipPath( 
+                               clipper: ShapeBorderClipper( 
+                                 shape: 
+                                 BeveledRectangleBorder( 
+                                     borderRadius: BorderRadius.circular(100.0)), 
+                               ), 
+                               child: Container( 
+                                   margin: EdgeInsets.only(left: 0, top: 0), 
+                                   height: 1000.0, 
+                                   width: 270.0, 
+                                   //height: double.infinity, 
+                                   //width: double.infinity, 
+                                   decoration: BoxDecoration( 
+                                     color: Colors.teal[100], 
+                                   ) 
+                               ), 
+                             ),*/</span>
+
+                             <span class="s0">Container(</span>
+                               <span class="s0">margin: EdgeInsets.only(left: </span><span class="s4">90</span><span class="s0">, top: height * </span><span class="s4">0.36</span><span class="s0">, right: </span><span class="s4">90</span><span class="s0">, bottom: height * </span><span class="s4">0.36</span><span class="s0">),</span>
+                               <span class="s3">//margin: EdgeInsets.only(left: 90, top: 300, right: 90, bottom: 300),</span>
+                               <span class="s0">height: double.infinity,</span>
+                               <span class="s0">width: double.infinity,</span>
+                               <span class="s3">/* 
+                               child: 
+                               Text('                More Info   About...', 
+                                 style: TextStyle( 
+                                   fontSize: 40, 
+                                   foreground: Paint() 
+                                     ..style = PaintingStyle.stroke 
+                                     ..strokeWidth = 6 
+                                     ..color = Colors.white, 
+                                 ), 
+                               ),*/</span>
+                               <span class="s0">child: Center(</span>
+                                 <span class="s0">child:</span>
+                                 <span class="s0">Text(</span><span class="s1">'More Info About...'</span><span class="s0">,</span>
+                                   <span class="s0">style: TextStyle(</span>
+                                     <span class="s0">fontSize: </span><span class="s4">40</span><span class="s0">,</span>
+                                     <span class="s0">foreground: Paint()</span>
+                                       <span class="s0">..style = PaintingStyle.stroke</span>
+                                       <span class="s0">..strokeWidth = </span><span class="s4">6</span>
+                                       <span class="s0">..color = Colors.white,</span>
+                                   <span class="s0">),</span>
+                                 <span class="s0">),</span>
+                               <span class="s0">),</span>
+                               <span class="s0">decoration: BoxDecoration(</span>
+
+                                 <span class="s0">color: Colors.white30,</span>
+                                 <span class="s0">borderRadius: BorderRadius.only(</span>
+                                     <span class="s0">topLeft: Radius.circular(</span><span class="s4">10</span><span class="s0">),</span>
+                                     <span class="s0">topRight: Radius.circular(</span><span class="s4">10</span><span class="s0">),</span>
+                                     <span class="s0">bottomLeft: Radius.circular(</span><span class="s4">10</span><span class="s0">),</span>
+                                     <span class="s0">bottomRight: Radius.circular(</span><span class="s4">10</span><span class="s0">)</span>
+                                 <span class="s0">),</span>
+                                 <span class="s0">boxShadow: [</span>
+                                   <span class="s0">BoxShadow(</span>
+                                     <span class="s0">color: Colors.grey.withOpacity(</span><span class="s4">0.5</span><span class="s0">),</span>
+                                     <span class="s0">spreadRadius: </span><span class="s4">5</span><span class="s0">,</span>
+                                     <span class="s0">blurRadius: </span><span class="s4">7</span><span class="s0">,</span>
+                                     <span class="s0">offset: Offset(</span><span class="s4">0</span><span class="s0">, </span><span class="s4">3</span><span class="s0">), </span><span class="s3">// changes position of shadow</span>
+                                   <span class="s0">),</span>
+                                 <span class="s0">],</span>
+                               <span class="s0">),</span>
+                             <span class="s0">),</span>
+
+
+                           <span class="s0">],</span>
+
+                     <span class="s0">),</span>
+                      <span class="s0">)</span>
+                     <span class="s0">)</span>
+
+         <span class="s0">);</span>
+  <span class="s0">}</span>
+
+  <span class="s0">@override</span>
+  <span class="s2">void </span><span class="s0">dispose() {</span>
+    <span class="s3">// TODO: implement dispose</span>
+    <span class="s2">super</span><span class="s0">.dispose();</span>
+
+  <span class="s0">}</span>
+<span class="s0">}</span></pre>
+</body>
+</html>

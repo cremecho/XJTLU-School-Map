@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybiats.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.days.linker.mapper.PathMapper">
+    <select id="findAll" resultType="com.days.linker.entity.Path">
+        SELECT * FROM path
+    </select>
+    <select id="findLevel1" resultType="com.days.linker.entity.Path">
+        SELECT * FROM elevator
+    </select>
+</mapper>
