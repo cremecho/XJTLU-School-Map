@@ -1,6 +1,6 @@
 # XJTLU-School-Map
 
-The CPT202 software engineering group project. The project contains two parts. /prject_p1 for the front-end part, and /springboot for the back-end part
+The CPT202 software engineering group project. The project contains two parts. /project_p1 for the front-end part, and /springboot for the back-end part
 
 This is an android map application for xjtlu students and staffs to use. It has funtion of:
   - view the big map of school, and the floor plain
