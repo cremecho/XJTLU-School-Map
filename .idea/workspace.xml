@@ -6,15 +6,6 @@
         <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
         <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
       </path>
-      <path>
-        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
-      </path>
-      <path>
-        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
-        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
-      </path>
     </expand>
     <select />
   </component>
@@ -53,7 +44,7 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../444" />
     <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -67,6 +58,7 @@
       <workItem from="1619774673845" duration="340000" />
       <workItem from="1619775528877" duration="1099000" />
       <workItem from="1619776816183" duration="1509000" />
+      <workItem from="1619778543322" duration="1043000" />
     </task>
     <task id="LOCAL-00001" summary="SE project program">
       <created>1619774799443</created>
@@ -117,14 +109,18 @@
     <option name="LAST_COMMIT_MESSAGE" value="SE project" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="501" y="201" key="FileChooserDialogImpl" timestamp="1619778318500">
+    <state x="501" y="201" key="FileChooserDialogImpl" timestamp="1619779585465">
       <screen x="0" y="0" width="1440" height="920" />
     </state>
-    <state x="501" y="201" key="FileChooserDialogImpl/0.0.1440.920@0.0.1440.920" timestamp="1619778318500" />
-    <state x="557" y="340" key="Github.ShareDialog" timestamp="1619776999182">
+    <state x="501" y="201" key="FileChooserDialogImpl/0.0.1440.920@0.0.1440.920" timestamp="1619779585465" />
+    <state x="557" y="340" key="Github.ShareDialog" timestamp="1619779518625">
       <screen x="0" y="0" width="1440" height="920" />
     </state>
-    <state x="557" y="340" key="Github.ShareDialog/0.0.1440.920@0.0.1440.920" timestamp="1619776999182" />
+    <state x="557" y="340" key="Github.ShareDialog/0.0.1440.920@0.0.1440.920" timestamp="1619779518625" />
+    <state x="490" y="165" key="Github.UntrackedFilesDialog" timestamp="1619779128319">
+      <screen x="0" y="0" width="1440" height="920" />
+    </state>
+    <state x="490" y="165" key="Github.UntrackedFilesDialog/0.0.1440.920@0.0.1440.920" timestamp="1619779128319" />
     <state x="594" y="162" key="RollbackChangesDialog" timestamp="1619777607046">
       <screen x="0" y="0" width="1440" height="920" />
     </state>
