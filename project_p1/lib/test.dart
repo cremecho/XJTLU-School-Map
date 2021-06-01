@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'dart:async';
 
-void main() {
-  runApp(MyApp());
-}
+import 'package:project_p1/FileOperation.dart';
+
+//void main() {
+//  runApp(MyApp());
+//}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -62,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -101,16 +106,48 @@ class _MyHomePageState extends State<MyHomePage> {
       //var json = jsonDecode(body);
       print(data);*/
       //var url_post = Uri.parse('http://49.234.94.245/searchpath');
-      var ur_post = Uri.parse('http://49.234.94.245/po');
+      Image img = Image.asset("images/S3.png");
+      final Image image = Image(image: AssetImage('images/S3.png'));
+      Completer<ui.Image> completer = new Completer<ui.Image>();
+      image.image
+          .resolve(new ImageConfiguration())
+          .addListener(new ImageStreamListener((ImageInfo image, bool _) {
+        completer.complete(image.image);
+      }));
+      ui.Image info = await completer.future;
+      int width = info.width;
+      int height = info.height;
+      print(width);
+      print(height);
+
+      var ur_post = Uri.parse('http://49.234.94.245/path');
       //var client = http.Client();
       print("1111111111111");
-      //var response = await http.post(url_post, body: {'tmp':'SA264!SB221!2!2'});
-      var response1 = await http.post(ur_post, body: {'classroom':'SA169'});
+      var response1 = await FileOperation.httpPostPath('SA164!FB195!1!1');
+      //var response1 = await http.post(ur_post, body: {'classroom':'SA169'});
       print("2222222222222");
       //var _content = response.body;
-      var _content1 = response1.body;
+      //var _content1 = response1.body;
       //print(json.decode(_content));
-      print(json.decode(_content1));
+      int numMap = 0;
+      print(json.decode(response1));
+      List<dynamic> l = json.decode(response1);
+      List<dynamic> maps = [];
+      for(var ele in l)
+      {
+         for(var building in ele)
+           {
+             numMap += 1;
+             for(var key in building.keys)
+               {
+                 print(key.toString()[0]);
+                 print(key.toString()[key.toString().length-1]);
+                 maps.add(building[key]);
+               }
+           }
+      }
+      //Map m = l[2][0];
+      print(maps);
     }
       )
     ),

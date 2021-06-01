@@ -148,7 +148,7 @@ class _SearchState extends State<Search> {
       //return SearchPage();
       //print(content);
       //print(tinf.runtimeType);
-      return GalleryPage(room_info);
+      return GalleryPage(room_info, "Classroom");
     }));
   }
 

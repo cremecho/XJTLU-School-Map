@@ -7,8 +7,9 @@ import 'FileOperation.dart';
 import 'dart:convert';
 
 class PrinterViewer extends StatefulWidget {
-  PrinterViewer({Key key}) : super(key: key);
-
+  //PrinterViewer({Key key}) : super(key: key);
+  int index;
+  PrinterViewer(this.index);
   _PrinterViewerState createState() => _PrinterViewerState();
 }
 
@@ -20,13 +21,15 @@ class _PrinterViewerState extends State<PrinterViewer> {
   //read txt file
   var _result = "";
   dynamic result;
-
+  List<String> l_name = ["printerroom","relaxroom","drinkingroom","labroom","officeroom"];
+  List<String> t_name = ["Printer","Self-Study","Water Dispenser","Lab","Office"];
+  String name = "";
   List<String> info = [];
   List<Map<String, dynamic>> room_info = [];
 
   Future getPrinter() async{
     //print("GO");
-    var inf = await FileOperation.httpGet("printerroom");
+    var inf = await FileOperation.httpGet(l_name[widget.index]);
     //print(inf.runtimeType);
     info = json.decode(inf).cast<String>();
     //print(info);
@@ -58,12 +61,16 @@ class _PrinterViewerState extends State<PrinterViewer> {
 
 
   void getClassInfo(String room) async{
-    var inf = await FileOperation.httpPostPrinter(room);
+    var inf = await FileOperation.httpPostPrinter(room, l_name[widget.index].substring(0, l_name[widget.index].length-4));
+    print(l_name[widget.index].substring(0, l_name[widget.index].length-4));
+    print(inf);
     print("sssssssssssssssssssssssssssss");
+
     room_info = json.decode(inf).cast<Map<String, dynamic>>();
+    //room_info = json.decode(inf).cast<Map<String, dynamic>>();
     print("88888888888888888888888888888888888");
     //print(inf);
-    print(room_info);
+    //print(room_info);
     print("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
     //info = json.decode(inf).cast<String,String>();
     //print(inf.runtimeType);
@@ -109,7 +116,14 @@ class _PrinterViewerState extends State<PrinterViewer> {
       //return SearchPage();
       //print(content);
       //print(tinf.runtimeType);
-      return PGalleryPage(room_info);
+      if(widget.index == 0)
+        {
+          return PGalleryPage(room_info);
+        }
+      else
+        {
+          return GalleryPage(room_info, t_name[widget.index]);
+        }
     }));
   }
 
@@ -135,9 +149,10 @@ class _PrinterViewerState extends State<PrinterViewer> {
     Scaffold(
         appBar: PreferredSize(preferredSize: Size.fromHeight(120),
             child: AppBar(
-              title: Text("Printer"),
+              title: Text(t_name[widget.index]),
               flexibleSpace: Image(
-                image: AssetImage('images/Printer.jpg'),
+                image: AssetImage('images/' + t_name[widget.index] + '.jpg'),
+                //image: AssetImage('images/Printer.jpg'),
                 fit: BoxFit.cover,
               ),
               backgroundColor: Colors.transparent,

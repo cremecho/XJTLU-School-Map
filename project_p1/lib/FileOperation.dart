@@ -48,13 +48,13 @@ class FileOperation{
     return _content;
   }
 
-  static httpPostPrinter(String printer) async {
+  static httpPostPrinter(String printer, String type) async {
     /*
     var url = Uri.parse(_server + purl);
     var respone = await http.post(url, body: "clasroom=SB102");
     return respone.body;
   }*/
-    var url_post = Uri.parse('http://49.234.94.245/printer');
+    var url_post = Uri.parse('http://49.234.94.245/' + type);
     //var client = http.Client();
     var response = await http.post(url_post, body: {'classroom': printer});
     var _content = response.body;

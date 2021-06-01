@@ -219,7 +219,7 @@ class MyDrawer extends StatelessWidget {
                     {
                       Navigator.push(context, MaterialPageRoute(builder: (context){
                         //return SearchPage();
-                        return PrinterViewer();
+                        return PrinterViewer(0);
                       }));
                     },
 
@@ -250,7 +250,7 @@ class MyDrawer extends StatelessWidget {
                   child:
                   ListTile(
                     leading: Icon(Icons.forward),
-                    title: Text('Vender',
+                    title: Text('Vendor',
                       style: TextStyle(
                         fontSize: 19.0,
                         color: Colors.white,
@@ -279,7 +279,7 @@ class MyDrawer extends StatelessWidget {
                     {
                       Navigator.push(context, MaterialPageRoute(builder: (context){
                         //return SearchPage();
-                        return MyApp1();
+                        return PrinterViewer(2);
                       }));
                     },
 
@@ -327,7 +327,7 @@ class MyDrawer1 extends StatelessWidget {
                     {
                       Navigator.push(context, MaterialPageRoute(builder: (context){
                         //return SearchPage();
-                        return MyApp1();
+                        return PrinterViewer(1);
                       }));
                     },
 
@@ -347,7 +347,7 @@ class MyDrawer1 extends StatelessWidget {
                     {
                       Navigator.push(context, MaterialPageRoute(builder: (context){
                         //return SearchPage();
-                        return MyApp1();
+                        return PrinterViewer(4);
                       }));
                     },
 
@@ -367,7 +367,7 @@ class MyDrawer1 extends StatelessWidget {
                     {
                       Navigator.push(context, MaterialPageRoute(builder: (context){
                         //return SearchPage();
-                        return MyApp1();
+                        return PrinterViewer(3);
                       }));
                     },
 

@@ -91,24 +91,6 @@ class _SearchPage extends State<SearchPage> {
                                  ),
                                ),
                              ),
-                             /*
-                             ClipPath(
-                               clipper: ShapeBorderClipper(
-                                 shape:
-                                 BeveledRectangleBorder(
-                                     borderRadius: BorderRadius.circular(100.0)),
-                               ),
-                               child: Container(
-                                   margin: EdgeInsets.only(left: 0, top: 0),
-                                   height: 1000.0,
-                                   width: 270.0,
-                                   //height: double.infinity,
-                                   //width: double.infinity,
-                                   decoration: BoxDecoration(
-                                     color: Colors.teal[100],
-                                   )
-                               ),
-                             ),*/
 
                              Container(
                                margin: EdgeInsets.only(left: 90, top: height * 0.36, right: 90, bottom: height * 0.36),

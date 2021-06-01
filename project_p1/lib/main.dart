@@ -83,10 +83,13 @@ class LinePainter extends CustomPainter
     ..style = PaintingStyle.stroke;
 
   List<dynamic> ps = [];
-
-  LinePainter(List<dynamic> points)
+  int wid = 0;
+  int hei = 0;
+  LinePainter(List<dynamic> points, int w, int h)
   {
     ps = points;
+    wid = w;
+    hei = h;
   }
 
 
@@ -95,8 +98,8 @@ class LinePainter extends CustomPainter
   {
     for(int i = 0; i< ps.length-1; i++)
       {
-        canvas.drawLine(Offset(size.width * ps[i]['x'] / 2550, 0.165*(1300-ps[i]['y'])),
-            Offset(size.width * ps[i+1]['x'] / 2550, 0.165*(1300-ps[i+1]['y'])),
+        canvas.drawLine(Offset(size.width * ps[i]['x'] / wid, 422 * (hei-ps[i]['y']) / wid),
+            Offset(size.width * ps[i+1]['x'] / wid, 422 * (hei-ps[i+1]['y']) / wid),
             _paint);
       }
 
@@ -125,14 +128,14 @@ class SecondScreenState extends State<SecondScreen> {
   bool show_maps = false;
   int ind = 0;
   double off = 30;
-  String _currentImage = 'images/layout.jpg';
+  String _currentImage = 'images/MM.png';
   //Color _color = Colors.deepOrange;
   List<Color> colors = [Colors.cyan, Colors.deepOrangeAccent, Colors.deepOrangeAccent];
   List<String> images = ['images/A3.jpg', 'images/B3.jpg','images/C3.jpg'];
   final fromController = TextEditingController();
   final toController = TextEditingController();
   TransformationController _controller = TransformationController();
-
+  List<int> widhei = [0,0];
 
   List<List<dynamic>> path_info = [[]];
 
@@ -152,21 +155,47 @@ class SecondScreenState extends State<SecondScreen> {
 
   void getPathInfo(String rooms) async{
     var inf = await FileOperation.httpPostPath(rooms);
-    //print(inf);
+    print(inf);
 
     //print("ffffffffffffffffffffffffffffff");
+    List<dynamic> general =[];
     path_info.clear();
-    path_info = json.decode(inf).cast<List<dynamic>>();
-    //print(path.runtimeType);
-    print(path_info);
-    //print(path_info[0][0]['x']);
-    //print(room_info);
-    //info = json.decode(inf).cast<String,String>();
-    //print(inf.runtimeType);
+    widhei.clear();
+    general = json.decode(inf).cast<List<dynamic>>();
+    print(general);
+    List<String> maps = [];
+    images.clear();
+    for(var ele in general)
+    {
+      for(var building in ele)
+      {
+        for(var key in building.keys)
+        {
+          maps.add(key.toString());
+          String str = key.toString();
+          String temp = 'images/' + str[0] + str[str.length-1] + ".png";
+          if(str[0] == 'S')
+            {
+              widhei.add(2550);
+              widhei.add(1300);
+            }
+          if(str[0] == 'M')
+            {
+              widhei.add(2362);
+              widhei.add(2362);
+            }
+          if(str[0] == 'F')
+          {
+            widhei.add(1417);
+            widhei.add(768);
+          }
+          //print("_______________"+temp);
+          images.add(temp);
+          path_info.add(building[key]);
+        }
+      }
+    }
 
-    //print(tinf[0]['corx']);
-    //print(tinf);
-    //return inf;
   }
 
   void _passData(String content) async
@@ -186,7 +215,7 @@ class SecondScreenState extends State<SecondScreen> {
         decoration: BoxDecoration(
          image: new DecorationImage(
             fit: BoxFit.cover,
-            image: new AssetImage('images/layout.jpg'),
+            image: new AssetImage('images/'),
 
         ),
       ),*/
@@ -223,7 +252,7 @@ class SecondScreenState extends State<SecondScreen> {
 
                                         CustomPaint(
                                           size: Size(width, height),
-                                          painter: LinePainter(path_info[ind]),
+                                          painter: LinePainter(path_info[ind], widhei[ind*2], widhei[ind*2+1]),
                                         ),
 
                                       ],
@@ -344,23 +373,10 @@ class SecondScreenState extends State<SecondScreen> {
                                              String str = f + '!' + t + '!' + f[2] + '!' + t[2];
                                              print(str);
                                              await _passData(str);
-                                             String l1 = 'images/'+ f[0] + f[2] + '.png';
-                                             String l2 = 'images/'+ t[0] + t[2] + '.png';
                                              //print(info);
                                              setState(() {
                                                show_button = false;
                                                show_maps = true;
-                                               if(l1 == l2)
-                                               {
-                                                 images.clear();
-                                                 images.add(l1);
-                                               }
-                                               else
-                                               {
-                                                 images.clear();
-                                                 images.add(l1);
-                                                 images.add(l2);
-                                               }
                                                print(images);
                                                _currentImage = images[0];
                                                //_controller.toScene(Offset(width * x_ratio, height * y_ratio));

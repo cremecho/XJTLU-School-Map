@@ -76,13 +76,18 @@ flutter:
   # see https://flutter.dev/custom-fonts/#from-packages
   assets:
     - images/splash.png
-    - images/layout.jpg
+    - images/MM.png
+    - images/F1.png
     - images/testLayout.jpg
     - images/SPLASH_PAGE.jpg
     - images/A3.jpg
     - images/B3.jpg
     - images/C3.jpg
     - images/Printer.jpg
+    - images/Office.jpg
+    - images/Self-Study.jpg
+    - images/Lab.jpg
+    - images/Water Dispenser.jpg
     - images/classroom.jpg
     - images/S1.png
     - images/S2.png

@@ -6,8 +6,8 @@ import 'package:flutter/rendering.dart';
 class GalleryPage extends StatefulWidget {
 
   List<Map<String, dynamic>> info;
-
-  GalleryPage(this.info);
+  String name;
+  GalleryPage(this.info, this.name);
 
   @override
   _GalleryPageState createState() => _GalleryPageState();
@@ -65,16 +65,24 @@ class _GalleryPageState extends State<GalleryPage> {
   void initState()
   {
     super.initState();
-
-    //print(widget.info);
+    print("111111111111111111");
+    print(widget.info);
+    print(widget.info.length);
+    print("111111111111111111");
     for(int i = 0; i < widget.info.length; i++)
       {
+
         _room = widget.info[i]['room'];
+        if(_room == null)
+          {
+            _room = widget.name;
+          }
         ratios.add(widget.info[i]['pixelw']/2550);
         ratios.add((1300 - widget.info[i]['pixelh'])/1300);
         //ratios.add(0.5);
         //ratios.add(0.5);
         floors.add(widget.info[i]['floor']);
+
       }
     print(widget.info);
     if(floors.length == 1)
@@ -87,7 +95,7 @@ class _GalleryPageState extends State<GalleryPage> {
         images.add('images/S'+ 2.toString() +'.png');
       }
     print(floors);
-    print(ratios);
+    print(_room);
     _currentImage = images[0];
     _currentFloor = "Floor  " + floors[0].toString();
     x_ratio = ratios[0];
